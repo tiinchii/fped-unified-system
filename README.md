@@ -9,7 +9,7 @@ Papalitan nito ang dalawang Google Apps Script app (Travel Order System at Procu
 | Bahagi | Gamit |
 |---|---|
 | Backend | Spring Boot 3, Java 21 |
-| Database | MariaDB 10.11 (Flyway migrations) |
+| Database | MariaDB 10.11 sa server; gumagana rin sa MySQL 8 sa local (Flyway migrations) |
 | Frontend | React 19 + TypeScript (Vite) |
 | Server | Ubuntu, Nginx sa harap (HTTPS) |
 | Gmail at Calendar | Google Workspace API (OAuth "Internal" app, office account) |
@@ -47,8 +47,8 @@ legacy/apps-script/   ang dalawang lumang Apps Script app, para sa reference at 
 
 ## Mga gabay
 
-- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) – paano patakbuhin sa sariling computer
-- [docs/DEPLOY.md](docs/DEPLOY.md) – paano i-deploy sa Ubuntu server, at paano i-import ang users
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) – paano patakbuhin sa sariling computer (Windows, PowerShell)
+- [docs/DEPLOY.md](docs/DEPLOY.md) – para sa Ubuntu server, saka na
 - [docs/PLAN.md](docs/PLAN.md) – buod ng phases at mga tanong na hindi pa nasasagot
 
 Ang buong detalyadong plano ay nasa Claude doc na "Planning Division Portal – Detalyadong Plano".

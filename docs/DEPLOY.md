@@ -1,5 +1,8 @@
 # Deployment sa Ubuntu server
 
+> **Para sa Ubuntu server lang ito, at saka na.** Ang mga command dito (may `sudo`) ay hindi pinapatakbo sa Windows
+> o sa project folder. Para sa pag-develop sa sariling computer, tingnan ang [DEVELOPMENT.md](DEVELOPMENT.md).
+
 Ayos: **Nginx** (443, HTTPS) ang nasa harap. Inihahatid nito ang React app at ipinapasa ang `/api` sa **Spring Boot**
 (127.0.0.1:8080), na siyang kumakausap sa **MariaDB**. Hindi bukas sa labas ang 8080 at 3306.
 
