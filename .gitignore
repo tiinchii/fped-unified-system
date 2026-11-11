@@ -22,3 +22,6 @@ dist/
 .vscode/
 *.iml
 .DS_Store
+
+# local tooling
+*.log

@@ -1,0 +1,50 @@
+# Passwords and other secrets are never written here: they come from environment variables
+# (see deploy/fped-portal.env.example).
+spring:
+  application:
+    name: fped-unified-system
+  autoconfigure:
+    exclude:   # logins are our own users table, not Spring's built-in sample user
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: ${DB_URL:jdbc:mariadb://localhost:3306/fped_portal}
+    username: ${DB_USERNAME:fped_portal}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate          # tables are created by Flyway (db/migration), never by Hibernate
+    properties:
+      hibernate.jdbc.time_zone: UTC   # times are stored in UTC and shown in Manila time by the app
+  flyway:
+    enabled: true
+
+server:
+  port: ${PORT:8080}
+  address: ${SERVER_ADDRESS:127.0.0.1}   # only Nginx on the same machine talks to the app
+  forward-headers-strategy: native       # Nginx tells the app the request came in over HTTPS
+  servlet:
+    session:
+      timeout: 8h                        # a login ends after 8 hours without activity
+      cookie:
+        name: FPEDSESSION
+        http-only: true
+        same-site: lax
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+springdoc:
+  api-docs:
+    enabled: false                       # the API description is only served in the dev profile
+
+app:
+  login:
+    max-failed-attempts: 5
+    lock-duration: 15m
+  bootstrap:
+    admin-username: admin
+    admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}

@@ -10,7 +10,7 @@ Papalitan nito ang dalawang Google Apps Script app (Travel Order System at Procu
 |---|---|
 | Backend | Spring Boot 3, Java 21 |
 | Database | MariaDB 10.11 (Flyway migrations) |
-| Frontend | Angular o React (hindi pa napagpapasyahan) |
+| Frontend | React 19 + TypeScript (Vite) |
 | Server | Ubuntu, Nginx sa harap (HTTPS) |
 | Gmail at Calendar | Google Workspace API (OAuth "Internal" app, office account) |
 
@@ -27,15 +27,31 @@ Roles: Admin, Encoder, Viewer. Admin at Encoder lang ang may Gmail at Calendar.
 ## Ayos ng repository
 
 ```
-backend/              Spring Boot (gagawin sa Phase 1)
-frontend/             Angular o React (gagawin sa Phase 1)
-docs/                 plano at mga tala
+backend/              Spring Boot: API, login, database migrations
+frontend/             React + TypeScript: mga screen
+deploy/               sample na Nginx config, systemd service, env file, backup script
+docs/                 plano at mga gabay
 legacy/apps-script/   ang dalawang lumang Apps Script app, para sa reference at data migration
 ```
 
-## Plano
+## Kalagayan
 
-Tingnan ang [docs/PLAN.md](docs/PLAN.md) para sa buod ng phases. Ang buong detalyadong plano ay nasa Claude doc na "Planning Division Portal – Detalyadong Plano".
+| Phase | Ano | Kalagayan |
+|---|---|---|
+| 1 | Pundasyon: login, roles, users, audit log, portal shell at menu | Tapos (hindi pa naka-deploy sa server) |
+| 2 | Travel Orders | Susunod |
+| 3 | Procurement | |
+| 4 | Gmail at Calendar | |
+| 5 | Import ng data at testing | |
+| 6 | Go-live | |
+
+## Mga gabay
+
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) – paano patakbuhin sa sariling computer
+- [docs/DEPLOY.md](docs/DEPLOY.md) – paano i-deploy sa Ubuntu server, at paano i-import ang users
+- [docs/PLAN.md](docs/PLAN.md) – buod ng phases at mga tanong na hindi pa nasasagot
+
+Ang buong detalyadong plano ay nasa Claude doc na "Planning Division Portal – Detalyadong Plano".
 
 ## Paalala
 

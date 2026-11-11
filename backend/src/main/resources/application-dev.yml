@@ -1,0 +1,4 @@
+# Local development: run with  SPRING_PROFILES_ACTIVE=dev
+springdoc:
+  api-docs:
+    enabled: true     # http://localhost:8080/v3/api-docs  (the frontend types are generated from this)

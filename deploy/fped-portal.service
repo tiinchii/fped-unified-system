@@ -1,0 +1,21 @@
+# /etc/systemd/system/fped-portal.service
+[Unit]
+Description=FPED Unified System (Spring Boot)
+After=network.target mariadb.service
+Wants=mariadb.service
+
+[Service]
+User=fped
+Group=fped
+EnvironmentFile=/etc/fped-portal/fped-portal.env
+WorkingDirectory=/opt/fped-portal
+ExecStart=/usr/bin/java -Xmx512m -jar /opt/fped-portal/fped-unified-system.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

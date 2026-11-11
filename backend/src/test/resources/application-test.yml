@@ -1,0 +1,9 @@
+# Tests run on an in-memory H2 database in MariaDB mode, so "mvn test" needs nothing installed.
+spring:
+  datasource:
+    url: jdbc:h2:mem:fped;MODE=MariaDB;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+app:
+  bootstrap:
+    admin-password:

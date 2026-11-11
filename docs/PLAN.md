@@ -2,6 +2,8 @@
 
 Tantiyang tagal: mga 15–16 linggo, isang developer.
 
+**Kalagayan:** tapos na ang code ng Phase 1 (login, roles, users, audit log, menu, user import, deploy files). Ang natitira sa Phase 1 ay ang mismong pag-deploy sa staging server at pag-import ng totoong users.
+
 | Phase | Gagawin | Tagal | Tapos kapag |
 |---|---|---|---|
 | 0 – Paghahanda | Sagutin ang open questions, hiling sa IT Dept, Google Cloud project, ihanda ang server | 1 linggo | May database at user na sa server; naipadala na ang mga hiling |
@@ -14,7 +16,7 @@ Tantiyang tagal: mga 15–16 linggo, isang developer.
 
 ## Mga tanong na hindi pa nasasagot
 
-- [ ] Angular o React ang frontend?
+- [x] Angular o React ang frontend? **React + TypeScript**
 - [ ] Itutuloy ba ang TO document checklist? Anong mga dokumento?
 - [ ] Office Gmail address; primary calendar ba o shared calendar?
 - [ ] Sino ang Workspace super admin; naka-restrict ba ang third-party apps?
