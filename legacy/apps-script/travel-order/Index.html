@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root { --blue:#1f4e79; --blue2:#2e6aa5; --red:#c0392b; --redbg:#fdecea; --amber:#9a6700; --amberbg:#fff6e0;
+          --green:#1e8449; --greenbg:#e9f7ef; --line:#dde3ea; --muted:#5f6b7a; --bg:#f4f6f9; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',Roboto,Arial,sans-serif; font-size:14px; color:#1d2733; background:var(--bg); }
+  header { background:var(--blue); color:#fff; padding:0 20px; display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; }
+  header h1 { margin:0; font-size:17px; font-weight:600; padding:14px 0; margin-right:auto; }
+  nav { display:flex; flex-wrap:wrap; }
+  nav button { background:none; border:none; color:#cfe0f1; font:inherit; font-weight:600; padding:16px 12px; cursor:pointer; border-bottom:3px solid transparent; }
+  nav button.active { color:#fff; border-bottom-color:#fff; }
+  main { padding:18px 20px 60px; max-width:1300px; margin:0 auto; }
+  .view { display:none; } .view.active { display:block; }
+  h2 { font-size:18px; margin:0 0 14px; }
+  h3 { font-size:15px; margin:18px 0 8px; }
+  button.btn { font:inherit; cursor:pointer; border:1px solid var(--line); background:#fff; border-radius:6px; padding:7px 14px; }
+  button.btn.primary { background:var(--blue); color:#fff; border-color:var(--blue); }
+  button.btn.danger { background:var(--red); color:#fff; border-color:var(--red); }
+  button.btn.small { padding:3px 9px; font-size:12px; }
+  button.btn:disabled { opacity:.6; cursor:wait; }
+  input, select, textarea { font:inherit; padding:7px 10px; border:1px solid #c8d1dc; border-radius:6px; background:#fff; width:100%; }
+  textarea { resize:vertical; min-height:60px; }
+  label.f { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.03em; }
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+  .grid .wide { grid-column:1/-1; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px; }
+  .card.flush { padding:0; overflow:auto; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:16px; }
+  .stat { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  .stat b { display:block; font-size:26px; }
+  .stat span { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+  .stat.red b { color:var(--red); }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:800px) { .two { grid-template-columns:1fr; } }
+  table { width:100%; border-collapse:collapse; }
+  th { position:sticky; top:0; background:#eef2f7; text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); padding:8px 10px; white-space:nowrap; }
+  td { padding:8px 10px; border-top:1px solid var(--line); vertical-align:top; }
+  tr.cancelled td { color:#9aa3ad; text-decoration:line-through; }
+  tr.conflict td { background:var(--redbg); }
+  .muted { color:var(--muted); } .small { font-size:12px; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .pill.Active, .pill.Ongoing { background:var(--greenbg); color:var(--green); }
+  .pill.Upcoming { background:#e3eefa; color:var(--blue2); }
+  .pill.Completed { background:#eef0f3; color:#4a5563; }
+  .pill.Cancelled { background:#eceef1; color:#888; text-decoration:line-through; }
+  .pill.warn { background:var(--redbg); color:var(--red); }
+  .pill.Resched { background:var(--amberbg); color:var(--amber); }
+  .history { margin:6px 0 0; padding-left:20px; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; align-items:center; }
+  .toolbar input, .toolbar select { width:auto; }
+  .toolbar input[type=search] { min-width:240px; flex:1; max-width:380px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip { background:#e8f0f8; color:var(--blue); border-radius:20px; padding:4px 6px 4px 12px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px; }
+  .chip.bad { background:var(--redbg); color:var(--red); }
+  .chip button { border:none; background:rgba(0,0,0,.08); border-radius:50%; width:20px; height:20px; cursor:pointer; line-height:18px; padding:0; color:inherit; }
+  .alert { padding:12px 14px; border-radius:8px; margin:12px 0; }
+  .alert.bad { background:var(--redbg); color:var(--red); }
+  .alert.ok { background:var(--greenbg); color:var(--green); }
+  .alert.warn { background:var(--amberbg); color:var(--amber); }
+  .alert ul { margin:6px 0 0; padding-left:20px; }
+  .link { color:var(--blue2); cursor:pointer; text-decoration:underline; }
+  .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .cal .dow { background:#eef2f7; font-size:12px; font-weight:700; color:var(--muted); padding:6px; text-align:center; }
+  .cal .day { background:#fff; min-height:96px; padding:4px 6px; cursor:pointer; font-size:12px; }
+  .cal .day.out { background:#f8f9fb; color:#aab; }
+  .cal .day.today .num { background:var(--blue); color:#fff; border-radius:10px; padding:0 6px; }
+  .cal .day.sel { outline:2px solid var(--blue2); outline-offset:-2px; }
+  .cal .num { font-weight:700; display:inline-block; margin-bottom:2px; }
+  .cal .who { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal .who.bad { color:var(--red); font-weight:700; }
+  .cal .more { color:var(--muted); }
+  @media (max-width:700px) { .cal .day { min-height:60px; } .cal .who { display:none; } .cal .cnt { display:block; } }
+  .cal .cnt { display:none; color:var(--blue); font-weight:700; }
+  .modal-bg { position:fixed; inset:0; background:rgba(20,30,40,.45); display:none; align-items:center; justify-content:center; padding:16px; z-index:10; }
+  .modal-bg.show { display:flex; }
+  .modal { background:#fff; border-radius:10px; padding:20px; width:100%; max-width:460px; }
+  .modal h3 { margin-top:0; }
+  .modal .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1d2733; color:#fff; padding:10px 18px; border-radius:8px; display:none; z-index:20; }
+  #loading { padding:80px; text-align:center; color:var(--muted); }
+  .userbox { display:flex; align-items:center; gap:8px; padding:8px 0; font-size:13px; }
+  .userbox select { width:auto; padding:4px 8px; background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.4); }
+  .userbox select option { color:#000; }
+  .userbox button { background:none; border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:6px; padding:4px 10px; cursor:pointer; font:inherit; font-size:12px; }
+  #loginView { max-width:360px; margin:70px auto; }
+  #loginView h2 { text-align:center; }
+  .viewer-hide.hidden, .admin-only.hidden, .hidden { display:none !important; }
+  .two > div { min-width:0; }
+  .modal { max-height:calc(100vh - 32px); overflow:auto; }
+  .short { display:none; }
+  .seg { display:inline-flex; border:1px solid #c8d1dc; border-radius:6px; overflow:hidden; background:#fff; }
+  .seg button { font:inherit; font-size:12px; border:none; background:none; padding:4px 10px; cursor:pointer; color:var(--muted); }
+  .seg button + button { border-left:1px solid #c8d1dc; }
+  .seg button.on { background:var(--blue); color:#fff; font-weight:700; }
+  .seg button:disabled { cursor:wait; opacity:.6; }
+  .seg.big button { font-size:14px; padding:8px 20px; }
+  .tag { display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:4px; vertical-align:1px; background:#eef0f3; color:#4a5563; }
+  .tag.COS { background:var(--amberbg); color:var(--amber); }
+  .tag.Permanent { background:#e3eefa; color:var(--blue2); }
+  th.c, td.c { text-align:center; }
+  td.c.zero { color:#c4cad2; }
+  .rep-mtext { display:none; }
+  .dts-group { margin-bottom:12px; }
+  .dts-group h3 { margin:0 0 8px; }
+
+  /* ---------- phones ---------- */
+  @media (max-width:700px) {
+    header { padding:0 12px; gap:0 8px; }
+    header h1 { font-size:15px; padding:10px 0; }
+    .userbox { gap:6px; padding:6px 0; }
+    #userName { display:none; }
+    .long { display:none; } .short { display:inline; }
+    nav { order:3; width:100%; flex-wrap:nowrap; overflow-x:auto; margin:0 -12px; padding:0 4px; width:calc(100% + 24px); scrollbar-width:none; }
+    nav::-webkit-scrollbar { display:none; }
+    nav button { padding:10px 10px 9px; white-space:nowrap; flex:none; }
+    main { padding:12px 12px 60px; }
+    h2 { font-size:17px; }
+    input, select, textarea { font-size:16px; } /* stops iPhone from zooming in on every field */
+    .toolbar input[type=search] { flex:1 1 100%; max-width:none; min-width:0; }
+    .toolbar select, .toolbar input[type=month] { flex:1 1 40%; }
+    .stats { grid-template-columns:1fr 1fr; gap:8px; }
+    .stat { padding:10px 12px; } .stat b { font-size:22px; } .stat span { font-size:11px; }
+    .card { padding:12px; }
+    button.btn { padding:9px 14px; }
+    button.btn.small { padding:6px 12px; font-size:13px; }
+    .form-actions .btn { flex:1 1 auto; }
+    .form-actions #fCancelTo { margin-left:0 !important; }
+
+    /* tables become one card per row; the column name is shown in front of each value */
+    table.stack thead { display:none; }
+    table.stack, table.stack tbody, table.stack tr, table.stack td { display:block; width:100%; }
+    table.stack tr { border-top:1px solid var(--line); padding:8px 0; }
+    table.stack tr:first-child { border-top:none; }
+    table.stack td { border:none; padding:3px 12px; white-space:normal !important; }
+    table.stack td[data-label] { position:relative; padding-left:108px; }
+    table.stack td[data-label]::before { content:attr(data-label); position:absolute; left:12px; top:5px; width:90px; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    table.stack tr.conflict { background:var(--redbg); }
+    .cal .cnt { display:inline-block; margin-left:4px; background:#e8f0f8; border-radius:10px; padding:0 6px; font-size:11px; }
+    .cal .day.bad-day .cnt { background:var(--redbg); color:var(--red); }
+    table.stack td:empty { display:none; }
+    table.stack td.actions { padding-top:8px; }
+    /* the 12 month columns of the report would be 12 lines per person; one short line instead */
+    table.stack .rep-m { display:none !important; }
+    table.stack td.rep-mtext { display:block; }
+    table.stack td.c { text-align:left; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Travel Order System</h1>
+  <nav id="mainNav" class="hidden">
+    <button data-view="dashboard" class="active">Dashboard</button>
+    <button data-view="form" class="viewer-hide">+ New<span class="long"> Travel Order</span></button>
+    <button data-view="list">Travel Orders</button>
+    <button data-view="calendar">Calendar</button>
+    <button data-view="people">Personnel</button>
+    <button data-view="reports">Reports</button>
+    <button data-view="users" class="admin-only">Users</button>
+  </nav>
+  <div class="userbox hidden" id="userBox">
+    <select id="yearSel" title="Year"></select>
+    <span id="userName"></span>
+    <button onclick="refresh()" title="Load the latest changes made by other users">↻<span class="long"> Refresh</span></button>
+    <button onclick="openPw()" title="Change password"><span class="long">Change password</span><span class="short">🔑</span></button>
+    <button onclick="doLogout()">Logout</button>
+  </div>
+</header>
+
+<main>
+  <div id="loading" class="hidden">Loading…</div>
+
+  <!-- LOGIN -->
+  <section id="loginView" class="hidden">
+    <div class="card">
+      <h2>Login</h2>
+      <div class="grid" style="grid-template-columns:1fr">
+        <div><label class="f">Username</label><input id="lgUser" autocomplete="username"></div>
+        <div><label class="f">Password</label><input id="lgPass" type="password" autocomplete="current-password"></div>
+      </div>
+      <div id="lgMsg"></div>
+      <button class="btn primary" id="lgBtn" style="width:100%;margin-top:14px">Login</button>
+      <p class="muted small" style="text-align:center">Forgot your password? Ask the admin to reset it.</p>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="view" id="dashboard">
+    <div class="stats">
+      <div class="stat"><b id="stActive">0</b><span>Active travel orders</span></div>
+      <div class="stat"><b id="stToday">0</b><span>On travel today</span></div>
+      <div class="stat"><b id="stWeek">0</b><span>Travelling next 7 days</span></div>
+      <div class="stat red"><b id="stConf">0</b><span>Overlapping travels</span></div>
+    </div>
+    <div class="two">
+      <div><h3>On travel today</h3><div class="card flush"><table class="stack"><tbody id="dbToday"></tbody></table></div></div>
+      <div><h3>Overlapping travels (saved with reason)</h3><div class="card flush"><table class="stack"><tbody id="dbConf"></tbody></table></div></div>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section class="view" id="form">
+    <h2 id="formTitle">New Travel Order</h2>
+    <div class="card">
+      <div class="grid">
+        <div class="wide">
+          <label class="f">Travelers *</label>
+          <input id="fTraveler" list="peopleOpts" placeholder="Type a name and pick from the list…" autocomplete="off">
+          <div class="chips" id="fChips"></div>
+          <div id="fNotFound" class="small" style="display:none;margin-top:6px"></div>
+        </div>
+        <div><label class="f">Start of travel *</label><input type="date" id="fStart"></div>
+        <div><label class="f">End of travel *</label><input type="date" id="fEnd"></div>
+        <div><label class="f">Office *</label><select id="fOffice"></select></div>
+        <div><label class="f">Date received</label><input type="date" id="fFiled"></div>
+        <div class="wide"><label class="f">Destination *</label><input id="fDest" placeholder="e.g. Region 7 (Cebu City)"></div>
+        <div class="wide"><label class="f">Purpose *</label><textarea id="fPurpose"></textarea></div>
+        <div><label class="f">DTS #</label><input id="fDts"></div>
+        <div><label class="f">TO / Page #</label><input id="fToNo"></div>
+        <div class="wide"><label class="f">Remarks</label><input id="fRemarks"></div>
+      </div>
+
+      <div id="fHistory"></div>
+      <div id="fConflicts"></div>
+      <div id="fReasonBox" style="display:none">
+        <label class="f">Reason for allowing the overlap *</label>
+        <textarea id="fReason" placeholder="e.g. Amended travel order / same activity / approved by Director"></textarea>
+      </div>
+      <div id="fMsg"></div>
+      <div class="form-actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn primary" id="fSave">Save travel order</button>
+        <button class="btn" onclick="resetForm()">Clear</button>
+        <button class="btn danger" id="fCancelTo" style="margin-left:auto;display:none" onclick="cancelFromForm()">Cancel this travel order</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIST -->
+  <section class="view" id="list">
+    <div class="toolbar">
+      <input type="search" id="lQ" placeholder="Search name, destination, DTS, TO ID…">
+      <select id="lOffice"><option value="">All offices</option></select>
+      <input type="month" id="lMonth" title="Month of travel">
+      <select id="lStatus">
+        <option value="notcancelled">All except cancelled</option>
+        <option value="Upcoming">Upcoming</option>
+        <option value="Ongoing">On travel now</option>
+        <option value="Completed">Completed</option>
+        <option value="Cancelled">Cancelled</option>
+        <option value="">All status</option>
+      </select>
+      <label class="small"><input type="checkbox" id="lConf" style="width:auto"> Overlaps only</label>
+      <span class="muted small" id="lCount"></span>
+    </div>
+    <div id="lDts"></div>
+    <div class="card flush"><table class="stack">
+      <thead><tr><th>TO ID</th><th>Travel dates</th><th>Travelers</th><th>Office</th><th>Destination</th><th>DTS / TO / Page #</th><th>Status</th><th></th></tr></thead>
+      <tbody id="lBody"></tbody>
+    </table></div>
+    <div style="text-align:center;margin-top:10px"><button class="btn" id="lMore" style="display:none">Show more</button></div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="view" id="calendar">
+    <div class="toolbar">
+      <button class="btn" onclick="calShift(-1)">‹</button>
+      <input type="month" id="cMonth">
+      <button class="btn" onclick="calShift(1)">›</button>
+      <select id="cOffice"><option value="">All offices</option></select>
+      <span class="muted small">Red names = overlapping travel that day</span>
+    </div>
+    <div class="cal" id="cGrid"></div>
+    <div id="cDetail"></div>
+  </section>
+
+  <!-- PEOPLE -->
+  <section class="view" id="people">
+    <div class="toolbar">
+      <input type="search" id="pQ" placeholder="Search name or office…">
+      <select id="pOffice"><option value="">All offices</option></select>
+      <select id="pEmp">
+        <option value="">COS & Permanent</option>
+        <option>Permanent</option>
+        <option>COS</option>
+        <option value="none">Not yet set</option>
+      </select>
+      <label class="small"><input type="checkbox" id="pInactive" style="width:auto"> Show inactive</label>
+      <button class="btn primary viewer-hide" onclick="openPerson()">+ Add person</button>
+      <span class="muted small" id="pCount"></span>
+    </div>
+    <div id="pDetail"></div>
+    <div class="card flush"><table class="stack">
+      <thead><tr><th>ID</th><th>Name</th><th>Office</th><th>Position</th><th>Employment</th><th>Travels</th><th>Next travel</th><th></th></tr></thead>
+      <tbody id="pBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- REPORTS -->
+  <section class="view" id="reports">
+    <div class="toolbar">
+      <select id="rPeriod" title="Period"></select>
+      <select id="rOffice"><option value="">All offices</option></select>
+      <select id="rEmp">
+        <option value="">COS & Permanent</option>
+        <option>Permanent</option>
+        <option>COS</option>
+      </select>
+      <input type="search" id="rQ" placeholder="Search name…">
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="rsTos">0</b><span>Travel orders</span></div>
+      <div class="stat"><b id="rsPeople">0</b><span>Persons who travelled</span></div>
+      <div class="stat"><b id="rsDays">0</b><span>Person-days of travel</span></div>
+      <div class="stat"><b id="rsTop">—</b><span>Office with most travel orders</span></div>
+    </div>
+    <h3 id="rPeopleTitle">Travel orders per person</h3>
+    <div class="card flush"><table class="stack" id="rPeopleTable"></table></div>
+    <div style="text-align:center;margin-top:10px"><button class="btn" id="rMore" style="display:none">Show more</button></div>
+    <h3 id="rOfficeTitle">Offices that travelled the most</h3>
+    <div class="card flush"><table class="stack" id="rOfficeTable"></table></div>
+    <p class="muted small">Cancelled travel orders are not counted. A travel that crosses into the next month is counted in both months.
+      The office of a person is the office in Personnel; the office of a travel order is the office written on the TO.</p>
+  </section>
+
+  <!-- USERS (Admin) -->
+  <section class="view" id="users">
+    <div class="toolbar">
+      <button class="btn primary" onclick="openUser()">+ Add user</button>
+      <span class="muted small">Admin = everything · Encoder = travel orders & personnel · Viewer = view only</span>
+    </div>
+    <div class="card flush"><table class="stack">
+      <thead><tr><th>Username</th><th>Full name</th><th>Role</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+      <tbody id="uBody"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<!-- USER MODAL -->
+<div class="modal-bg" id="userModal"><div class="modal">
+  <h3 id="umTitle">Add user</h3>
+  <div class="grid" style="grid-template-columns:1fr">
+    <div><label class="f">Username *</label><input id="umUser" placeholder="e.g. jdelacruz" autocomplete="off"></div>
+    <div><label class="f">Full name</label><input id="umName"></div>
+    <div><label class="f">Role</label><select id="umRole"><option>Encoder</option><option>Viewer</option><option>Admin</option></select></div>
+    <div><label class="f" id="umPwLabel">Password *</label><input id="umPw" type="password" autocomplete="new-password" placeholder="at least 8 characters"></div>
+    <div id="umActiveBox"><label class="small"><input type="checkbox" id="umActive" style="width:auto" checked> Active (can log in)</label></div>
+  </div>
+  <div id="umMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('userModal')">Cancel</button><button class="btn primary" id="umSave">Save</button></div>
+</div></div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-bg" id="pwModal"><div class="modal">
+  <h3>Change password</h3>
+  <div class="grid" style="grid-template-columns:1fr">
+    <div><label class="f">Current password</label><input id="pwOld" type="password" autocomplete="current-password"></div>
+    <div><label class="f">New password</label><input id="pwNew" type="password" autocomplete="new-password" placeholder="at least 8 characters"></div>
+    <div><label class="f">Repeat new password</label><input id="pwNew2" type="password" autocomplete="new-password"></div>
+  </div>
+  <div id="pwMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('pwModal')">Cancel</button><button class="btn primary" id="pwSave">Save</button></div>
+</div></div>
+
+<datalist id="peopleOpts"></datalist>
+
+<!-- PERSON MODAL -->
+<div class="modal-bg" id="personModal"><div class="modal">
+  <h3 id="pmTitle">Add person</h3>
+  <div class="grid" style="grid-template-columns:1fr">
+    <div><label class="f">Full name *</label><input id="pmName" placeholder="e.g. JUAN A. DELA CRUZ JR."></div>
+    <div id="pmSimilar"></div>
+    <div><label class="f">Office</label><select id="pmOffice"></select></div>
+    <div><label class="f">Position</label><input id="pmPos"></div>
+    <div><label class="f">Employment *</label><div class="seg big" id="pmEmp">
+      <button type="button" data-v="Permanent">Permanent</button><button type="button" data-v="COS">COS</button></div></div>
+    <div id="pmActiveBox"><label class="small"><input type="checkbox" id="pmActive" style="width:auto" checked> Active</label></div>
+  </div>
+  <div id="pmMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('personModal')">Cancel</button><button class="btn primary" id="pmSave">Save</button></div>
+</div></div>
+
+<!-- CANCEL / RESTORE MODAL -->
+<div class="modal-bg" id="cancelModal"><div class="modal">
+  <h3 id="cmTitle"></h3>
+  <p class="muted" id="cmInfo"></p>
+  <div id="cmConflicts"></div>
+  <label class="f" id="cmReasonLabel">Reason</label><input id="cmReason" placeholder="optional">
+  <div id="cmMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('cancelModal')">Back</button><button class="btn danger" id="cmOk"></button></div>
+</div></div>
+
+<!-- RESCHEDULE MODAL -->
+<div class="modal-bg" id="reschedModal"><div class="modal">
+  <h3 id="rmTitle"></h3>
+  <p class="muted" id="rmInfo"></p>
+  <div class="grid">
+    <div><label class="f">New start *</label><input type="date" id="rmStart"></div>
+    <div><label class="f">New end *</label><input type="date" id="rmEnd"></div>
+  </div>
+  <label class="f" style="margin-top:12px">Place / destination *</label><input id="rmDest">
+  <label class="f" style="margin-top:12px">Reason for the change *</label><input id="rmReason" placeholder="e.g. Activity moved by organizer / venue changed">
+  <div id="rmConflicts"></div>
+  <div id="rmOverlapBox" style="display:none">
+    <label class="f">Reason for allowing the overlap *</label><input id="rmOverlap">
+  </div>
+  <div id="rmMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('reschedModal')">Back</button><button class="btn primary" id="rmOk">Save change</button></div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+/* ======================== STATE ======================== */
+let D = null;
+let orderById = {}, peopleById = {}, pidsByTo = {}, trips = [], tripsByPid = {}, conflictTos = new Set(), conflictPairs = [];
+let form = { id: null, pids: [] };
+let listLimit = 200;
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ======================== HELPERS ======================== */
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toDate(iso) { const p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function isoOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function addDays(iso, n) { const d = toDate(iso); d.setDate(d.getDate() + n); return isoOf(d); }
+function fmt(iso) { if (!iso) return ''; const d = toDate(iso); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+function range(s, e) {
+  if (!s) return '';
+  if (s === e) return fmt(s);
+  const a = toDate(s), b = toDate(e);
+  if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()) return MON[a.getMonth()] + ' ' + a.getDate() + '–' + b.getDate() + ', ' + a.getFullYear();
+  if (a.getFullYear() === b.getFullYear()) return MON[a.getMonth()] + ' ' + a.getDate() + ' – ' + MON[b.getMonth()] + ' ' + b.getDate() + ', ' + a.getFullYear();
+  return fmt(s) + ' – ' + fmt(e);
+}
+function days(s, e) { return Math.round((toDate(e) - toDate(s)) / 864e5) + 1; }
+function norm(n) { return String(n || '').toUpperCase().replace(/[.,`'"]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3500); }
+function closeModal(id) { $(id).classList.remove('show'); }
+/**
+ * Scrolls only this page. el.scrollIntoView() also scrolls the Google page around the app,
+ * which the user cannot scroll back, so the app gets stuck halfway up.
+ */
+function scrollToEl(el) { window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 10, behavior: 'smooth' }); }
+function rawCall(fn, ...args) {
+  return new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+}
+/** Server call with the login token; sends the user back to the login page when the session expired. */
+async function call(fn, ...args) {
+  try {
+    return await rawCall(fn, TOKEN, ...args);
+  } catch (e) {
+    if (String(e.message || e).indexOf('SESSION_EXPIRED') >= 0) {
+      showLogin('Your session has expired. Please log in again.');
+      throw new Error('Please log in again.');
+    }
+    throw e;
+  }
+}
+function store(op, v) {
+  try {
+    if (op === 'get') return sessionStorage.getItem('to_token') || '';
+    if (op === 'set') sessionStorage.setItem('to_token', v); else sessionStorage.removeItem('to_token');
+  } catch (e) { /* storage blocked: user just logs in again on reload */ }
+  return '';
+}
+function canEdit() { return D && D.user.role !== 'Viewer'; }
+function isAdmin() { return D && D.user.role === 'Admin'; }
+
+/** Cancelled is saved in the sheet; the others follow from the travel dates. */
+function statusOf(o) {
+  if (o.status === 'Cancelled') return 'Cancelled';
+  if (o.end < D.today) return 'Completed';
+  if (o.start > D.today) return 'Upcoming';
+  return 'Ongoing';
+}
+const STATUS_LABEL = { Upcoming: 'Upcoming', Ongoing: 'On travel', Completed: 'Completed', Cancelled: 'Cancelled' };
+function statusPill(o) { const s = statusOf(o); return '<span class="pill ' + s + '">' + STATUS_LABEL[s] + '</span>'; }
+/** Original dates of a rescheduled travel order, read from the first line of its history (null if the dates never changed). */
+function originalDates(o) {
+  const m = (o.resched || []).length && /^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})/.exec(o.resched[0]);
+  return m && (m[1] !== o.start || m[2] !== o.end) ? { start: m[1], end: m[2] } : null;
+}
+/** "... · Place: Cebu City → Bohol" at the end of a history line -> { from, to } */
+function placeChange(line) {
+  const m = / · Place: (.*) → (.*)$/.exec(line);
+  return m ? { from: m[1], to: m[2] } : null;
+}
+/** Original destination of a travel order whose place was changed (null if never changed). */
+function originalPlace(o) {
+  const first = (o.resched || []).map(placeChange).find(Boolean);
+  return first && first.from !== o.dest ? first.from : null;
+}
+function historyHtml(o) {
+  return (o.resched || []).length ? '<div class="alert warn"><b>Changed ' + o.resched.length + 'x (date / place)</b><ul class="history">' +
+    o.resched.map(l => {
+      const pl = placeChange(l), p = l.replace(/ · Place: .*$/, '').split(' · '), d = /^(\S+) to (\S+) → (\S+) to (\S+)$/.exec(p[0]);
+      const dates = !d ? esc(p[0]) : d[1] === d[3] && d[2] === d[4] ? '' : esc(range(d[1], d[2])) + ' → <b>' + esc(range(d[3], d[4])) + '</b>';
+      const place = pl ? 'Place: ' + esc(pl.from) + ' → <b>' + esc(pl.to) + '</b>' : '';
+      return '<li>' + [dates, place].filter(Boolean).join('<br>') + ' <span class="small">(' + esc(p.slice(1).join(' · ')) + ')</span></li>';
+    }).join('') + '</ul></div>' : '';
+}
+function empTag(p) { return p && p.employment ? '<span class="tag ' + p.employment + '">' + esc(p.employment) + '</span>' : ''; }
+
+/** Put a saved travel order into the local data instead of reloading everything from the server. */
+function applyOrder(order, travelers) {
+  const i = D.orders.findIndex(o => o.id === order.id);
+  if (i >= 0) D.orders[i] = order; else D.orders.push(order);
+  if (travelers) D.travelers = D.travelers.filter(t => t.to !== order.id).concat(travelers);
+  index(D); renderAll();
+}
+
+function applyPerson(p) {
+  const i = D.people.findIndex(x => x.id === p.id);
+  if (i >= 0) D.people[i] = p; else D.people.push(p);
+  index(D); renderAll();
+}
+
+async function refresh() { await load(); toast('Updated with the latest data'); }
+function officeOptions(sel, withAll) {
+  sel.innerHTML = (withAll ? '<option value="">All offices</option>' : '<option value="">— select —</option>') +
+    D.offices.map(o => '<option>' + esc(o) + '</option>').join('');
+}
+
+/* ======================== LOGIN ======================== */
+let TOKEN = store('get'), booted = false;
+
+function showLogin(msg) {
+  TOKEN = ''; store('del'); D = null; booted = false;
+  ['mainNav', 'userBox', 'loading'].forEach(id => $(id).classList.add('hidden'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.modal-bg').forEach(m => m.classList.remove('show'));
+  $('loginView').classList.remove('hidden');
+  $('lgPass').value = '';
+  $('lgMsg').innerHTML = msg ? '<div class="alert warn">' + esc(msg) + '</div>' : '';
+  $('lgUser').focus();
+}
+
+async function doLogin() {
+  const u = $('lgUser').value.trim(), p = $('lgPass').value;
+  if (!u || !p) { $('lgMsg').innerHTML = '<div class="alert bad">Enter your username and password.</div>'; return; }
+  $('lgBtn').disabled = true; $('lgMsg').innerHTML = '';
+  try {
+    const res = await rawCall('login', u, p);
+    TOKEN = res.token; store('set', TOKEN);
+    startApp();
+  } catch (e) {
+    $('lgMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>';
+  } finally { $('lgBtn').disabled = false; }
+}
+$('lgBtn').onclick = doLogin;
+$('lgPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+$('lgUser').addEventListener('keydown', e => { if (e.key === 'Enter') $('lgPass').focus(); });
+
+async function doLogout() {
+  try { await rawCall('logout', TOKEN); } catch (e) { /* ignore */ }
+  showLogin('You have been logged out.');
+}
+
+function startApp() {
+  $('loginView').classList.add('hidden');
+  $('loading').classList.remove('hidden');
+  $('loading').textContent = 'Loading…';
+  load();
+}
+
+function applyRole() {
+  $('userName').textContent = (D.user.name || D.user.username) + ' (' + D.user.role + ')';
+  document.querySelectorAll('.viewer-hide').forEach(el => el.classList.toggle('hidden', !canEdit()));
+  document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin()));
+}
+
+/* ======================== LOAD ======================== */
+async function load(year) {
+  try {
+    const data = await call('getData', year || (D && D.year) || '');
+    index(data);
+    if (!booted) {
+      booted = true;
+      $('loading').classList.add('hidden');
+      $('mainNav').classList.remove('hidden'); $('userBox').classList.remove('hidden');
+      applyRole(); resetForm(); show('dashboard');
+    }
+    renderAll();
+  } catch (e) {
+    if (!TOKEN) return; // already sent back to login
+    if (booted) toast(e.message || e);
+    else $('loading').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>';
+  }
+}
+
+$('yearSel').addEventListener('change', () => { $('cMonth').value = ''; $('lMonth').value = ''; load($('yearSel').value); });
+
+/** Is this date range inside the data that is loaded in the browser? */
+function inWindow(start, end) { return start >= D.window.from && end <= D.window.to; }
+function yearStart() { return D.year + '-01-01'; }
+function yearEnd() { return D.year + '-12-31'; }
+
+function index(data) {
+  D = data;
+  orderById = {}; peopleById = {}; pidsByTo = {}; tripsByPid = {}; trips = [];
+  D.orders.forEach(o => orderById[o.id] = o);
+  D.people.forEach(p => peopleById[p.id] = p);
+  D.travelers.forEach(t => (pidsByTo[t.to] = pidsByTo[t.to] || []).push(t.pid));
+  D.travelers.forEach(t => {
+    const o = orderById[t.to];
+    if (!o || o.status !== 'Active' || !o.start) return;
+    const trip = { pid: t.pid, to: t.to, start: o.start, end: o.end };
+    trips.push(trip);
+    (tripsByPid[t.pid] = tripsByPid[t.pid] || []).push(trip);
+  });
+  // overlapping pairs among active travel orders of the selected year
+  conflictTos = new Set(); conflictPairs = [];
+  const ys = yearStart(), ye = yearEnd();
+  Object.keys(tripsByPid).forEach(pid => {
+    const list = tripsByPid[pid].sort((a, b) => a.start.localeCompare(b.start));
+    for (let i = 0; i < list.length; i++)
+      for (let j = i + 1; j < list.length && list[j].start <= list[i].end; j++) {
+        if (!(list[j].start <= ye && list[i].end >= ys)) continue;
+        conflictPairs.push({ pid, a: list[i], b: list[j] });
+        conflictTos.add(list[i].to); conflictTos.add(list[j].to);
+      }
+  });
+  $('peopleOpts').innerHTML = D.people.filter(p => p.active)
+    .map(p => '<option value="' + esc(p.name + ' — ' + (p.office || 'no office') + (p.employment ? ' · ' + p.employment : '') + ' (' + p.id + ')') + '">').join('');
+  ['fOffice', 'pmOffice'].forEach(id => { const v = $(id).value; officeOptions($(id)); $(id).value = v; });
+  ['lOffice', 'cOffice', 'pOffice', 'rOffice'].forEach(id => { const v = $(id).value; officeOptions($(id), true); $(id).value = v; });
+  const per = $('rPeriod').value;
+  $('rPeriod').innerHTML = '<option value="">Whole year ' + D.year + '</option>' +
+    MON.map((m, i) => { const v = D.year + '-' + String(i + 1).padStart(2, '0'); return '<option value="' + v + '">' + m + ' ' + D.year + '</option>'; }).join('');
+  $('rPeriod').value = per && +per.slice(0, 4) === D.year ? per : '';
+
+  const years = D.years.indexOf(D.year) < 0 ? D.years.concat(D.year).sort((a, b) => b - a) : D.years;
+  const nextYear = +D.today.slice(0, 4) + 1;
+  if (years.indexOf(nextYear) < 0) years.unshift(nextYear); // allow encoding next year's travel early
+  $('yearSel').innerHTML = years.map(y => '<option' + (y === D.year ? ' selected' : '') + '>' + y + '</option>').join('');
+  $('lMonth').min = D.year + '-01'; $('lMonth').max = D.year + '-12';
+  if (!$('cMonth').value || +$('cMonth').value.slice(0, 4) !== D.year)
+    $('cMonth').value = D.today.slice(0, 4) == D.year ? D.today.slice(0, 7) : D.year + '-01';
+}
+
+function conflictsFor(pids, start, end, excludeId) {
+  const out = [];
+  pids.forEach(pid => (tripsByPid[pid] || []).forEach(t => {
+    if (t.to !== excludeId && t.start <= end && t.end >= start) out.push(t);
+  }));
+  return out;
+}
+
+function renderAll() { renderDashboard(); renderList(); renderCalendar(); renderPeople(); renderReports(); renderFormConflicts(); if ($('users').classList.contains('active')) renderUsers(); }
+
+/* ======================== NAV ======================== */
+function show(view) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === view));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  if (b.dataset.view === 'form' && form.id) resetForm();
+  if (b.dataset.view === 'users') renderUsers();
+  show(b.dataset.view);
+});
+
+/* ======================== DASHBOARD ======================== */
+function travelerNames(toId) { return (pidsByTo[toId] || []).map(pid => (peopleById[pid] || {}).name || pid); }
+
+function renderDashboard() {
+  const today = D.today, week = addDays(today, 7);
+  const current = inWindow(today, week);
+  const active = D.orders.filter(o => o.status === 'Active' && o.start <= yearEnd() && o.end >= yearStart());
+  const nowTrips = current ? trips.filter(t => t.start <= today && t.end >= today) : [];
+  const weekPeople = new Set(trips.filter(t => t.start <= week && t.end >= today).map(t => t.pid));
+  $('stActive').textContent = active.length;
+  $('stActive').nextElementSibling.textContent = 'Active travel orders ' + D.year;
+  $('stToday').textContent = current ? new Set(nowTrips.map(t => t.pid)).size : '—';
+  $('stWeek').textContent = current ? weekPeople.size : '—';
+  $('stConf').textContent = conflictPairs.length;
+
+  const toTag = o => o.toNo ? ' <span class="small muted">· TO / Page # ' + esc(o.toNo) + '</span>' : '';
+  $('dbToday').innerHTML = nowTrips.length ? nowTrips
+    .sort((a, b) => ((peopleById[a.pid] || {}).name || '').localeCompare((peopleById[b.pid] || {}).name || ''))
+    .map(t => { const o = orderById[t.to], p = peopleById[t.pid] || {};
+      return '<tr><td><span class="link" onclick="showPerson(\'' + t.pid + '\')"><b>' + esc(p.name) + '</b></span><div class="muted small">' + esc(p.office) + '</div></td>' +
+        '<td>' + esc(o.dest) + '<div class="muted small">' + esc(range(o.start, o.end)) + ' · <span class="link" onclick="editOrder(\'' + o.id + '\')">' + o.id + '</span>' + toTag(o) + '</div></td></tr>'; }).join('')
+    : '<tr><td class="muted">' + (current ? 'Nobody is on travel today.' : 'Select the current year to see who is on travel today.') + '</td></tr>';
+
+  $('dbConf').innerHTML = conflictPairs.length ? conflictPairs.map(c => {
+    const p = peopleById[c.pid] || {}, a = orderById[c.a.to], b = orderById[c.b.to];
+    return '<tr class="conflict"><td><span class="link" onclick="showPerson(\'' + c.pid + '\')"><b>' + esc(p.name) + '</b></span></td>' +
+      '<td><span class="link" onclick="editOrder(\'' + a.id + '\')">' + a.id + '</span> ' + esc(range(a.start, a.end)) + toTag(a) + '<br>' +
+      '<span class="link" onclick="editOrder(\'' + b.id + '\')">' + b.id + '</span> ' + esc(range(b.start, b.end)) + toTag(b) +
+      (a.reason || b.reason ? '<div class="small muted">Reason: ' + esc(b.reason || a.reason) + '</div>' : '') + '</td></tr>';
+  }).join('') : '<tr><td class="muted">No overlapping travels. 👍</td></tr>';
+}
+
+/* ======================== FORM ======================== */
+function resetForm() {
+  form = { id: null, pids: [] };
+  $('formTitle').textContent = 'New Travel Order';
+  ['fTraveler', 'fStart', 'fEnd', 'fDest', 'fPurpose', 'fDts', 'fToNo', 'fRemarks', 'fReason'].forEach(id => $(id).value = '');
+  $('fOffice').value = ''; $('fFiled').value = D.today;
+  $('fMsg').innerHTML = ''; $('fNotFound').style.display = 'none';
+  $('fCancelTo').style.display = 'none'; $('fHistory').innerHTML = '';
+  renderChips(); renderFormConflicts();
+}
+
+function editOrder(id) {
+  const o = orderById[id];
+  if (!o) return;
+  if (o.status !== 'Active' || !canEdit()) { showOrderInfo(o); return; }
+  form = { id, pids: (pidsByTo[id] || []).slice() };
+  $('formTitle').textContent = 'Edit ' + id;
+  $('fStart').value = o.start; $('fEnd').value = o.end; $('fOffice').value = o.office; $('fFiled').value = o.filed;
+  $('fDest').value = o.dest; $('fPurpose').value = o.purpose; $('fDts').value = o.dts; $('fToNo').value = o.toNo;
+  $('fRemarks').value = o.remarks; $('fReason').value = o.reason; $('fTraveler').value = ''; $('fMsg').innerHTML = '';
+  $('fCancelTo').style.display = 'inline-block';
+  $('fHistory').innerHTML = historyHtml(o);
+  if (statusOf(o) === 'Completed') $('fMsg').innerHTML = '<div class="alert warn">This travel is already completed. Edit only to correct the record.</div>';
+  renderChips(); renderFormConflicts(); show('form');
+}
+
+/**
+ * For the Cancel button of the edit form. Inside an onclick="…" attribute, "form" means the
+ * button's own .form property (null), not the variable above, so it cannot be used there.
+ */
+function cancelFromForm() { if (form.id) askCancel(form.id); }
+
+/** Cancelled travel orders (or any, for viewers) open in the list, where Restore is available. */
+function showOrderInfo(o) {
+  $('lQ').value = o.id; $('lStatus').value = ''; $('lMonth').value = ''; $('lOffice').value = ''; $('lConf').checked = false;
+  renderList(); show('list');
+}
+
+function renderChips() {
+  const start = $('fStart').value, end = $('fEnd').value || start;
+  const bad = new Set(start ? conflictsFor(form.pids, start, end, form.id).map(c => c.pid) : []);
+  $('fChips').innerHTML = form.pids.map(pid => {
+    const p = peopleById[pid] || { name: pid };
+    return '<span class="chip' + (bad.has(pid) ? ' bad' : '') + '">' + (bad.has(pid) ? '⚠ ' : '') + esc(p.name) + empTag(p) +
+      '<button title="Remove" onclick="removeTraveler(\'' + pid + '\')">×</button></span>';
+  }).join('');
+}
+
+function addTravelerFromInput() {
+  const v = $('fTraveler').value.trim();
+  if (!v) return;
+  const m = /\((P\d+)\)\s*$/.exec(v);
+  let pid = m && peopleById[m[1]] ? m[1] : null;
+  if (!pid) { const hit = D.people.find(p => p.active && norm(p.name) === norm(v)); if (hit) pid = hit.id; }
+  if (pid) {
+    if (form.pids.indexOf(pid) < 0) form.pids.push(pid);
+    if (!$('fOffice').value && peopleById[pid].office) $('fOffice').value = peopleById[pid].office;
+    $('fTraveler').value = ''; $('fNotFound').style.display = 'none';
+    renderChips(); renderFormConflicts();
+  } else if (!v.includes('(')) {
+    $('fNotFound').style.display = 'block';
+    $('fNotFound').innerHTML = '"' + esc(v) + '" is not in the personnel list. <span class="link" onclick="openPerson(null, $(\'fTraveler\').value, true)">+ Add as new person</span>';
+  }
+}
+$('fTraveler').addEventListener('change', addTravelerFromInput);
+$('fTraveler').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTravelerFromInput(); } });
+function removeTraveler(pid) { form.pids = form.pids.filter(x => x !== pid); renderChips(); renderFormConflicts(); }
+
+$('fStart').addEventListener('change', () => { if (!$('fEnd').value || $('fEnd').value < $('fStart').value) $('fEnd').value = $('fStart').value; renderChips(); renderFormConflicts(); });
+$('fEnd').addEventListener('change', () => { renderChips(); renderFormConflicts(); });
+
+function renderFormConflicts() {
+  if (!D) return;
+  const start = $('fStart').value, end = $('fEnd').value || start;
+  const box = $('fConflicts');
+  if (!start || !form.pids.length) { box.innerHTML = ''; $('fReasonBox').style.display = 'none'; $('fSave').textContent = 'Save travel order'; return; }
+  if (!inWindow(start, end)) {
+    box.innerHTML = '<div class="alert warn">These dates are outside ' + D.year + '. The overlap check will be done when you save ' +
+      '(or switch the year at the top to preview it).</div>';
+    $('fReasonBox').style.display = 'none'; $('fSave').textContent = 'Save travel order';
+    return;
+  }
+  const list = conflictsFor(form.pids, start, end, form.id);
+  if (!list.length) {
+    box.innerHTML = '<div class="alert ok">✔ No overlap — all ' + form.pids.length + ' traveler(s) are free on ' + esc(range(start, end)) + ' (' + days(start, end) + ' day(s)).</div>';
+    $('fReasonBox').style.display = 'none'; $('fSave').textContent = 'Save travel order';
+    return;
+  }
+  box.innerHTML = conflictHtml(list);
+  $('fReasonBox').style.display = 'block'; $('fSave').textContent = 'Save anyway (with reason)';
+}
+
+function conflictHtml(list) {
+  return '<div class="alert bad"><b>⚠ Overlapping travel found</b><ul>' + list.map(c => {
+    const o = orderById[c.to] || { dest: c.dest, office: c.office };
+    const name = c.name || (peopleById[c.pid] || {}).name;
+    return '<li><b>' + esc(name) + '</b> already has <span class="link" onclick="editOrder(\'' + c.to + '\')">' + c.to + '</span> on ' +
+      esc(range(c.start, c.end)) + ' — ' + esc(o.dest) + ' (' + esc(o.office) + ')</li>';
+  }).join('') + '</ul></div>';
+}
+
+$('fSave').onclick = async () => {
+  addTravelerFromInput();
+  const o = {
+    id: form.id, travelers: form.pids, start: $('fStart').value, end: $('fEnd').value || $('fStart').value,
+    office: $('fOffice').value, filed: $('fFiled').value, dest: $('fDest').value, purpose: $('fPurpose').value,
+    dts: $('fDts').value, toNo: $('fToNo').value, remarks: $('fRemarks').value, reason: $('fReason').value,
+  };
+  const missing = [];
+  if (!o.travelers.length) missing.push('travelers'); if (!o.start) missing.push('start date');
+  if (!o.office) missing.push('office'); if (!o.dest.trim()) missing.push('destination'); if (!o.purpose.trim()) missing.push('purpose');
+  if (missing.length) { $('fMsg').innerHTML = '<div class="alert bad">Please fill in: ' + missing.join(', ') + '.</div>'; return; }
+  if (inWindow(o.start, o.end) && conflictsFor(o.travelers, o.start, o.end, o.id).length && !o.reason.trim()) {
+    $('fMsg').innerHTML = '<div class="alert bad">There is an overlap. Remove the traveler, change the dates, or enter a reason to save anyway.</div>';
+    $('fReason').focus(); return;
+  }
+  $('fSave').disabled = true; $('fMsg').innerHTML = '<div class="alert warn">Saving…</div>';
+  try {
+    const res = await call('saveOrder', o);
+    if (!res.ok) {
+      // someone else saved a conflicting travel in the meantime
+      $('fConflicts').innerHTML = conflictHtml(res.conflicts);
+      $('fReasonBox').style.display = 'block';
+      $('fMsg').innerHTML = '<div class="alert bad">New overlap found while saving. Enter a reason to save anyway.</div>';
+      await load(); return;
+    }
+    applyOrder(res.order, res.travelers);
+    const wasEdit = !!form.id;
+    resetForm();
+    $('fMsg').innerHTML = '<div class="alert ok">✔ ' + res.id + (wasEdit ? ' updated.' : ' saved.') + '</div>';
+    toast(res.id + ' saved');
+  } catch (e) {
+    $('fMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>';
+  } finally { $('fSave').disabled = false; }
+};
+
+/* ======================== LIST ======================== */
+function renderList() {
+  const q = norm($('lQ').value), office = $('lOffice').value, month = $('lMonth').value, status = $('lStatus').value, onlyConf = $('lConf').checked;
+  let ms = yearStart(), me = yearEnd();
+  if (month) { ms = month + '-01'; const d = toDate(ms); me = isoOf(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+  const list = D.orders.filter(o => {
+    if (!(o.start <= me && o.end >= ms)) return false;
+    if (status === 'notcancelled' ? o.status === 'Cancelled' : status && statusOf(o) !== status) return false;
+    if (office && o.office !== office) return false;
+    if (onlyConf && !conflictTos.has(o.id)) return false;
+    if (q) {
+      const hay = norm([o.id, o.dest, o.purpose, o.dts, o.toNo, o.office, travelerNames(o.id).join(' ')].join(' '));
+      if (hay.indexOf(q) < 0) return false;
+    }
+    return true;
+  }).sort((a, b) => b.start.localeCompare(a.start) || b.id.localeCompare(a.id));
+
+  $('lCount').textContent = list.length + ' travel order(s) in ' + (month || D.year);
+  renderDtsGroups(q);
+  $('lBody').innerHTML = list.slice(0, listLimit).map(o => {
+    const names = travelerNames(o.id), orig = originalDates(o), origPlace = originalPlace(o);
+    return '<tr class="' + (o.status === 'Cancelled' ? 'cancelled' : conflictTos.has(o.id) ? 'conflict' : '') + '">' +
+      '<td><b>' + o.id + '</b><div class="muted small">Received ' + esc(fmt(o.filed)) + '</div></td>' +
+      '<td style="white-space:nowrap"><b>' + esc(range(o.start, o.end)) + '</b><div class="muted small">' + days(o.start, o.end) + ' day(s)</div>' +
+        (orig ? '<div class="small muted" title="' + esc(o.resched.join('\n')) + '">was <s>' + esc(range(orig.start, orig.end)) + '</s></div>' : '') + '</td>' +
+      '<td>' + names.slice(0, 4).map(esc).join('<br>') + (names.length > 4 ? '<div class="muted small">+' + (names.length - 4) + ' more</div>' : '') + '</td>' +
+      '<td>' + esc(o.office) + '</td>' +
+      '<td>' + esc(o.dest) + (origPlace ? '<div class="small muted">was <s>' + esc(origPlace) + '</s></div>' : '') +
+        '<div class="muted small" title="' + esc(o.purpose) + '">' + esc(o.purpose.slice(0, 90)) + (o.purpose.length > 90 ? '…' : '') + '</div></td>' +
+      '<td class="small">' + (o.dts ? '<span class="link" title="Show everyone on this DTS" onclick="searchDts(this.textContent)">' + esc(o.dts) + '</span>' : '') + (o.toNo ? '<br>' + esc(o.toNo) : '') + '</td>' +
+      '<td>' + statusPill(o) + (orig ? '<br><span class="pill Resched">Rescheduled</span>' : '') + (origPlace ? '<br><span class="pill Resched">Place changed</span>' : '') +
+        (conflictTos.has(o.id) && o.status === 'Active' ? '<br><span class="pill warn">Overlap</span>' : '') + '</td>' +
+      '<td class="actions" style="white-space:nowrap">' + (!canEdit() ? '' : o.status === 'Active'
+        ? '<button class="btn small" onclick="editOrder(\'' + o.id + '\')">Edit</button> <button class="btn small" onclick="askReschedule(\'' + o.id + '\')">Change date / place</button> <button class="btn small" onclick="askCancel(\'' + o.id + '\')">Cancel</button>'
+        : '<button class="btn small" onclick="askRestore(\'' + o.id + '\')">Restore</button><div class="small muted" style="white-space:normal;max-width:220px">' + esc(o.remarks) + '</div>') + '</td></tr>';
+  }).join('') || '<tr><td colspan="8" class="muted">No travel orders found.</td></tr>';
+  $('lMore').style.display = list.length > listLimit ? 'inline-block' : 'none';
+}
+['lQ', 'lOffice', 'lMonth', 'lStatus', 'lConf'].forEach(id => $(id).addEventListener('input', () => { listLimit = 200; renderList(); }));
+
+/**
+ * When the search matches a DTS number, everyone on that DTS is listed together (all travel
+ * orders with that DTS in the loaded year, whatever the other filters are).
+ */
+function renderDtsGroups(q) {
+  const box = $('lDts');
+  // DTS numbers have digits; this keeps a name search from showing DTS groups
+  if (q.replace(/\s/g, '').length < 3 || !/\d/.test(q)) { box.innerHTML = ''; return; }
+  const groups = {};
+  D.orders.filter(o => o.dts && norm(o.dts).indexOf(q) >= 0)
+    .forEach(o => (groups[norm(o.dts)] = groups[norm(o.dts)] || []).push(o));
+  const keys = Object.keys(groups).sort();
+  box.innerHTML = keys.slice(0, 5).map(k => {
+    const orders = groups[k].sort((a, b) => a.start.localeCompare(b.start));
+    const rows = [];
+    orders.forEach(o => (pidsByTo[o.id] || []).forEach(pid => rows.push({ o, p: peopleById[pid] || { id: pid, name: pid } })));
+    rows.sort((a, b) => a.o.start.localeCompare(b.o.start) || a.o.id.localeCompare(b.o.id) || a.p.name.localeCompare(b.p.name));
+    const people = new Set(rows.filter(r => r.o.status !== 'Cancelled').map(r => r.p.id)).size;
+    return '<div class="card dts-group"><h3>DTS ' + esc(orders[0].dts) + ' — ' + people + ' person(s) together' +
+      (orders.length > 1 ? ' in ' + orders.length + ' travel orders' : '') + '</h3>' +
+      '<table class="stack"><thead><tr><th>Name</th><th>Office</th><th>Employment</th><th>TO ID</th><th>Dates</th><th>Destination</th></tr></thead><tbody>' +
+      rows.map(r => '<tr class="' + (r.o.status === 'Cancelled' ? 'cancelled' : '') + '"><td><span class="link" onclick="showPerson(\'' + r.p.id + '\')"><b>' + esc(r.p.name) + '</b></span></td>' +
+        '<td>' + esc(r.p.office) + '</td><td>' + (empTag(r.p) || '<span class="muted">—</span>') + '</td>' +
+        '<td><span class="link" onclick="editOrder(\'' + r.o.id + '\')">' + r.o.id + '</span></td>' +
+        '<td>' + esc(range(r.o.start, r.o.end)) + '</td><td>' + esc(r.o.dest) + '</td></tr>').join('') +
+      '</tbody></table></div>';
+  }).join('') + (keys.length > 5 ? '<p class="muted small">' + (keys.length - 5) + ' more DTS numbers match — type more of the number.</p>' : '');
+}
+function searchDts(dts) {
+  $('lQ').value = dts; $('lStatus').value = ''; $('lMonth').value = ''; $('lOffice').value = ''; $('lConf').checked = false;
+  listLimit = 200; renderList(); window.scrollTo(0, 0);
+}
+$('lMore').onclick = () => { listLimit += 200; renderList(); };
+
+function askCancel(id) { statusModal(id, 'cancel'); }
+function askRestore(id) { statusModal(id, 'restore'); }
+
+/** Confirmation dialog for cancelling or restoring a travel order. */
+function statusModal(id, mode) {
+  const o = orderById[id];
+  const restore = mode === 'restore';
+  $('cmTitle').textContent = (restore ? 'Restore ' : 'Cancel ') + id + '?';
+  $('cmInfo').textContent = range(o.start, o.end) + ' — ' + o.dest + ' — ' + travelerNames(id).join(', ');
+  $('cmOk').textContent = restore ? 'Restore travel order' : 'Cancel travel order';
+  $('cmOk').className = 'btn ' + (restore ? 'primary' : 'danger');
+  $('cmReasonLabel').textContent = 'Reason';
+  $('cmReason').placeholder = 'optional';
+  $('cmReason').value = ''; $('cmMsg').innerHTML = '';
+  // when restoring, warn right away if the travelers already have other travel on those dates
+  const conflicts = restore && inWindow(o.start, o.end) ? conflictsFor(pidsByTo[id] || [], o.start, o.end, id) : [];
+  const needReason = list => {
+    $('cmConflicts').innerHTML = conflictHtml(list);
+    $('cmReasonLabel').textContent = 'Reason for allowing the overlap *';
+    $('cmReason').placeholder = 'required';
+  };
+  $('cmConflicts').innerHTML = '';
+  if (conflicts.length) needReason(conflicts);
+  $('cancelModal').classList.add('show');
+
+  $('cmOk').onclick = async () => {
+    const reason = $('cmReason').value.trim();
+    if (restore && $('cmConflicts').innerHTML && !reason) { $('cmMsg').innerHTML = '<div class="alert bad">Please enter a reason.</div>'; return; }
+    $('cmOk').disabled = true;
+    try {
+      const res = await call(restore ? 'restoreOrder' : 'cancelOrder', id, reason);
+      if (!res.ok) { needReason(res.conflicts); $('cmMsg').innerHTML = '<div class="alert bad">Overlap found. Enter a reason to restore anyway.</div>'; return; }
+      closeModal('cancelModal');
+      applyOrder(res.order);
+      if (form.id === id) resetForm();
+      toast(id + (restore ? ' restored' : ' cancelled'));
+    } catch (e) { $('cmMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>'; }
+    finally { $('cmOk').disabled = false; }
+  };
+}
+
+/** Dialog for moving a travel order to new dates and/or a new place (same TO ID; the old ones go to the history). */
+function askReschedule(id) {
+  const o = orderById[id];
+  $('rmTitle').textContent = 'Change date / place — ' + id;
+  $('rmInfo').textContent = 'Current: ' + range(o.start, o.end) + ' — ' + o.dest + ' — ' + travelerNames(id).join(', ');
+  $('rmStart').value = o.start; $('rmEnd').value = o.end; $('rmDest').value = o.dest;
+  ['rmReason', 'rmOverlap'].forEach(x => $(x).value = '');
+  $('rmMsg').innerHTML = ''; $('rmConflicts').innerHTML = ''; $('rmOverlapBox').style.display = 'none';
+  const check = () => {
+    if ($('rmEnd').value < $('rmStart').value) $('rmEnd').value = $('rmStart').value;
+    const s = $('rmStart').value, e = $('rmEnd').value;
+    const same = s === o.start && e === o.end; // same dates = no new overlap
+    const list = s && !same && inWindow(s, e) ? conflictsFor(pidsByTo[id] || [], s, e, id) : [];
+    $('rmConflicts').innerHTML = list.length ? conflictHtml(list) : '';
+    $('rmOverlapBox').style.display = list.length ? 'block' : 'none';
+  };
+  $('rmStart').onchange = check; $('rmEnd').onchange = check;
+  $('reschedModal').classList.add('show');
+
+  $('rmOk').onclick = async () => {
+    const s = $('rmStart').value, e = $('rmEnd').value || s, reason = $('rmReason').value.trim(), overlap = $('rmOverlap').value.trim();
+    const dest = $('rmDest').value.trim();
+    const bad = msg => { $('rmMsg').innerHTML = '<div class="alert bad">' + msg + '</div>'; };
+    if (!s) return bad('Please enter the new dates.');
+    if (!dest) { $('rmDest').focus(); return bad('Please enter the place / destination.'); }
+    if (s === o.start && e === o.end && dest === o.dest) return bad('Nothing was changed. Change the dates and/or the place.');
+    if (!reason) { $('rmReason').focus(); return bad('Please enter the reason for the change.'); }
+    if ($('rmConflicts').innerHTML && !overlap) { $('rmOverlap').focus(); return bad('There is an overlap. Enter a reason to allow it, or pick other dates.'); }
+    $('rmOk').disabled = true;
+    try {
+      const res = await call('rescheduleOrder', id, s, e, reason, overlap, dest);
+      if (!res.ok) {
+        $('rmConflicts').innerHTML = conflictHtml(res.conflicts); $('rmOverlapBox').style.display = 'block';
+        return bad('Overlap found. Enter a reason to allow it, or pick other dates.');
+      }
+      closeModal('reschedModal');
+      applyOrder(res.order);
+      if (form.id === id) editOrder(id);
+      toast(id + ' changed: ' + range(s, e) + ' — ' + dest);
+    } catch (err) { bad(esc(err.message || err)); }
+    finally { $('rmOk').disabled = false; }
+  };
+}
+
+/* ======================== CALENDAR ======================== */
+function calShift(n) {
+  const d = toDate(($('cMonth').value || D.today.slice(0, 7)) + '-01');
+  d.setMonth(d.getMonth() + n);
+  $('cMonth').value = isoOf(d).slice(0, 7);
+  calMonthChanged();
+}
+
+/** Moving the calendar into another year loads that year's data. */
+function calMonthChanged() {
+  const y = +($('cMonth').value || '').slice(0, 4);
+  if (y && y !== D.year) { const keep = $('cMonth').value; load(y).then(() => { $('cMonth').value = keep; renderCalendar(); }); }
+  else renderCalendar();
+}
+
+function renderCalendar() {
+  if (!$('cMonth').value) $('cMonth').value = D.today.slice(0, 7);
+  const first = toDate($('cMonth').value + '-01');
+  const office = $('cOffice').value;
+  const start = new Date(first); start.setDate(1 - first.getDay());
+  const pool = trips.filter(t => !office || (peopleById[t.pid] || {}).office === office || (orderById[t.to] || {}).office === office);
+
+  let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => '<div class="dow">' + d + '</div>').join('');
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const iso = isoOf(d);
+    if (i === 35 && d.getMonth() !== first.getMonth()) break;
+    const on = pool.filter(t => t.start <= iso && t.end >= iso);
+    const count = {}; on.forEach(t => count[t.pid] = (count[t.pid] || 0) + 1);
+    const pids = Object.keys(count).sort((a, b) => (count[b] > 1) - (count[a] > 1));
+    html += '<div class="day' + (d.getMonth() !== first.getMonth() ? ' out' : '') + (iso === D.today ? ' today' : '') + (pids.some(pid => count[pid] > 1) ? ' bad-day' : '') + '" data-iso="' + iso + '" onclick="calDay(\'' + iso + '\')">' +
+      '<span class="num">' + d.getDate() + '</span>' +
+      (pids.length ? '<span class="cnt">' + pids.length + '</span>' : '') +
+      pids.slice(0, 4).map(pid => '<div class="who' + (count[pid] > 1 ? ' bad' : '') + '">' + esc((peopleById[pid] || {}).name || pid) + '</div>').join('') +
+      (pids.length > 4 ? '<div class="more">+' + (pids.length - 4) + ' more</div>' : '') + '</div>';
+  }
+  $('cGrid').innerHTML = html;
+  $('cDetail').innerHTML = '';
+}
+
+function calDay(iso) {
+  document.querySelectorAll('.cal .day').forEach(el => el.classList.toggle('sel', el.dataset.iso === iso));
+  const office = $('cOffice').value;
+  const on = trips.filter(t => t.start <= iso && t.end >= iso && (!office || (peopleById[t.pid] || {}).office === office || (orderById[t.to] || {}).office === office));
+  const count = {}; on.forEach(t => count[t.pid] = (count[t.pid] || 0) + 1);
+  on.sort((a, b) => ((peopleById[a.pid] || {}).name || '').localeCompare((peopleById[b.pid] || {}).name || ''));
+  $('cDetail').innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
+    '<h3>On travel — ' + esc(fmt(iso)) + ' (' + Object.keys(count).length + ' person/s)</h3>' +
+    '<button class="btn small" onclick="window.scrollTo({ top: 0, behavior: \'smooth\' })">↑ Back to calendar</button></div><div class="card flush"><table class="stack">' +
+    '<thead><tr><th>Name</th><th>Office</th><th>Destination</th><th>Dates</th><th>TO</th></tr></thead><tbody>' +
+    (on.map(t => { const p = peopleById[t.pid] || {}, o = orderById[t.to];
+      return '<tr class="' + (count[t.pid] > 1 ? 'conflict' : '') + '"><td><span class="link" onclick="showPerson(\'' + t.pid + '\')">' + esc(p.name) + '</span></td><td>' + esc(p.office) +
+        '</td><td>' + esc(o.dest) + '</td><td>' + esc(range(o.start, o.end)) + '</td><td><span class="link" onclick="editOrder(\'' + o.id + '\')">' + o.id + '</span></td></tr>'; }).join('')
+      || '<tr><td colspan="5" class="muted">Nobody on travel.</td></tr>') + '</tbody></table></div>';
+  scrollToEl($('cDetail'));
+}
+$('cMonth').addEventListener('change', calMonthChanged);
+$('cOffice').addEventListener('input', renderCalendar);
+
+/* ======================== PEOPLE ======================== */
+function renderPeople() {
+  const q = norm($('pQ').value), office = $('pOffice').value, inactive = $('pInactive').checked, emp = $('pEmp').value;
+  const list = D.people.filter(p => (inactive || p.active) && (!office || p.office === office) &&
+    (!emp || (emp === 'none' ? !p.employment : p.employment === emp)) &&
+    (!q || norm(p.name + ' ' + p.office + ' ' + p.id).indexOf(q) >= 0)).sort((a, b) => a.name.localeCompare(b.name));
+  const conflictPids = new Set(conflictPairs.map(c => c.pid));
+  $('pCount').textContent = list.length + ' person(s)';
+  $('pBody').innerHTML = list.slice(0, 500).map(p => {
+    const t = tripsByPid[p.id] || [];
+    const next = t.filter(x => x.end >= D.today).sort((a, b) => a.start.localeCompare(b.start))[0];
+    return '<tr' + (p.active ? '' : ' class="cancelled"') + '><td class="small muted">' + p.id + '</td>' +
+      '<td><span class="link" onclick="showPerson(\'' + p.id + '\')"><b>' + esc(p.name) + '</b></span>' + (conflictPids.has(p.id) ? ' <span class="pill warn">Overlap</span>' : '') + '</td>' +
+      '<td>' + esc(p.office) + '</td><td>' + esc(p.position) + '</td><td>' + empCell(p) + '</td><td>' + t.length + '</td>' +
+      '<td>' + (next ? esc(range(next.start, next.end)) + '<div class="small muted">' + esc(orderById[next.to].dest) + '</div>' : '<span class="muted">—</span>') + '</td>' +
+      '<td class="actions">' + (canEdit() ? '<button class="btn small" onclick="openPerson(\'' + p.id + '\')">Edit</button>' : '') + '</td></tr>';
+  }).join('') + (list.length > 500 ? '<tr><td colspan="8" class="muted">Showing first 500 — use search to narrow down.</td></tr>' : '');
+}
+['pQ', 'pOffice', 'pInactive', 'pEmp'].forEach(id => $(id).addEventListener('input', renderPeople));
+
+/** Encoders get two buttons (click to set Permanent or COS right away); viewers see the value only. */
+function empCell(p) {
+  if (!canEdit()) return empTag(p) || '<span class="muted">—</span>';
+  return '<span class="seg">' + ['Permanent', 'COS'].map(e => '<button class="' + (p.employment === e ? 'on' : '') +
+    '" onclick="setEmployment(\'' + p.id + '\',\'' + e + '\', this)">' + e + '</button>').join('') + '</span>';
+}
+async function setEmployment(pid, emp, btn) {
+  const p = peopleById[pid];
+  if (!p || p.employment === emp) return;
+  btn.parentNode.querySelectorAll('button').forEach(b => b.disabled = true);
+  try {
+    const res = await call('savePerson', { id: p.id, name: p.name, office: p.office, position: p.position, active: p.active, employment: emp });
+    applyPerson(res.person);
+    toast(res.name + ' — ' + emp);
+  } catch (e) { toast(e.message || e); renderPeople(); }
+}
+
+function showPerson(pid) {
+  const p = peopleById[pid]; if (!p) return;
+  const list = D.orders.filter(o => (pidsByTo[o.id] || []).indexOf(pid) >= 0 && o.start <= yearEnd() && o.end >= yearStart())
+    .sort((a, b) => b.start.localeCompare(a.start));
+  const bad = new Set(conflictPairs.filter(c => c.pid === pid).flatMap(c => [c.a.to, c.b.to]));
+  const totalDays = list.filter(o => o.status === 'Active').reduce((s, o) => s + days(o.start, o.end), 0);
+  const perMonth = monthsOfYear().map((m, i) => ({ m: MON[i], n: list.filter(o => o.status === 'Active' && o.start <= m.end && o.end >= m.start).length }))
+    .filter(x => x.n).map(x => x.m + ' ' + x.n).join(' · ');
+  $('pDetail').innerHTML = '<div class="card" style="margin-bottom:14px">' +
+    '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h2 style="margin:0">' + esc(p.name) + empTag(p) + '</h2>' +
+    '<div class="muted">' + esc([p.office, p.position, p.id].filter(Boolean).join(' · ')) + ' · ' + list.filter(o => o.status === 'Active').length + ' travel(s), ' + totalDays + ' day(s) in ' + D.year + '</div>' +
+    (perMonth ? '<div class="small">Travel orders per month: ' + perMonth + '</div>' : '') + '</div>' +
+    '<button class="btn" onclick="$(\'pDetail\').innerHTML=\'\'">Close</button></div>' +
+    '<table class="stack" style="margin-top:10px"><thead><tr><th>TO ID</th><th>Dates</th><th>Destination</th><th>Office</th><th>Status</th></tr></thead><tbody>' +
+    (list.map(o => '<tr class="' + (o.status === 'Cancelled' ? 'cancelled' : bad.has(o.id) ? 'conflict' : '') + '"><td><span class="link" onclick="editOrder(\'' + o.id + '\')">' + o.id + '</span></td>' +
+      '<td><b>' + esc(range(o.start, o.end)) + '</b></td><td>' + esc(o.dest) + '</td><td>' + esc(o.office) + '</td><td>' + statusPill(o) +
+      (bad.has(o.id) && o.status === 'Active' ? ' <span class="pill warn">Overlap</span>' : '') + '</td></tr>').join('') || '<tr><td colspan="5" class="muted">No travel orders yet.</td></tr>') +
+    '</tbody></table></div>';
+  show('people');
+}
+
+/* ======================== REPORTS ======================== */
+/** The 12 months of the selected year: [{ key: '2027-01', start: '2027-01-01', end: '2027-01-31' }, …] */
+function monthsOfYear() {
+  return MON.map((m, i) => {
+    const key = D.year + '-' + String(i + 1).padStart(2, '0');
+    return { key, start: key + '-01', end: isoOf(new Date(D.year, i + 1, 0)) };
+  });
+}
+/** Days of the travel s–e that fall inside the period ps–pe. */
+function clipDays(s, e, ps, pe) { const a = s > ps ? s : ps, b = e < pe ? e : pe; return a <= b ? days(a, b) : 0; }
+
+let repLimit = 300;
+function renderReports() {
+  const per = $('rPeriod').value, office = $('rOffice').value, emp = $('rEmp').value, q = norm($('rQ').value);
+  const allMonths = monthsOfYear();
+  const period = per ? allMonths.filter(m => m.key === per) : allMonths;
+  const ps = period[0].start, pe = period[period.length - 1].end;
+  const label = per ? MON[+per.slice(5) - 1] + ' ' + D.year : String(D.year);
+
+  const tally = (map, key, t) => {
+    const r = map[key] = map[key] || { key, tos: new Set(), pids: new Set(), days: 0, m: allMonths.map(() => new Set()) };
+    r.tos.add(t.to); r.pids.add(t.pid); r.days += clipDays(t.start, t.end, ps, pe);
+    allMonths.forEach((m, i) => { if (t.start <= m.end && t.end >= m.start) r.m[i].add(t.to); });
+  };
+  const byPerson = {}, byOffice = {};
+  trips.forEach(t => {
+    if (!(t.start <= pe && t.end >= ps)) return;
+    const p = peopleById[t.pid] || {}, toOffice = (orderById[t.to] || {}).office || '(no office)';
+    if (emp && p.employment !== emp) return;
+    if ((!office || p.office === office) && (!q || norm(p.name).indexOf(q) >= 0)) tally(byPerson, t.pid, t);
+    if (!office || toOffice === office) tally(byOffice, toOffice, t);
+  });
+  const sortRows = (map, name) => Object.values(map).sort((a, b) => b.tos.size - a.tos.size || b.days - a.days || name(a).localeCompare(name(b)));
+  const people = sortRows(byPerson, r => (peopleById[r.key] || {}).name || r.key);
+  const offices = sortRows(byOffice, r => r.key);
+
+  const allTos = new Set(); people.forEach(r => r.tos.forEach(id => allTos.add(id)));
+  $('rsTos').textContent = allTos.size;
+  $('rsPeople').textContent = people.length;
+  $('rsDays').textContent = people.reduce((s, r) => s + r.days, 0);
+  $('rsTop').textContent = offices.length ? offices[0].key : '—';
+  $('rsTop').title = offices.length ? offices[0].tos.size + ' travel order(s)' : '';
+  [['rsTos', 'Travel orders'], ['rsPeople', 'Persons who travelled'], ['rsDays', 'Person-days of travel']]
+    .forEach(([id, txt]) => $(id).nextElementSibling.textContent = txt + ' · ' + label);
+
+  // whole year: one column per month (one short line on phones); one month: totals only
+  const monthHead = per ? '' : MON.map(m => '<th class="c rep-m">' + m + '</th>').join('') + '<th class="rep-mtext">Per month</th>';
+  const monthCells = r => per ? '' : r.m.map(s => '<td class="c rep-m' + (s.size ? '' : ' zero') + '">' + (s.size || '·') + '</td>').join('') +
+    '<td class="rep-mtext small">' + (r.m.map((s, i) => s.size ? MON[i] + ' ' + s.size : '').filter(Boolean).join(' · ') || '—') + '</td>';
+
+  $('rPeopleTitle').textContent = 'Travel orders per person — ' + label + ' (' + people.length + ')';
+  $('rPeopleTable').innerHTML = '<thead><tr><th>#</th><th>Name</th><th>Office</th><th>Employment</th>' + monthHead +
+    '<th class="c">Total TO</th><th class="c">Days</th></tr></thead><tbody>' +
+    (people.slice(0, repLimit).map((r, i) => {
+      const p = peopleById[r.key] || { name: r.key };
+      return '<tr><td class="muted small">' + (i + 1) + '</td><td><span class="link" onclick="showPerson(\'' + r.key + '\')"><b>' + esc(p.name) + '</b></span></td>' +
+        '<td>' + esc(p.office) + '</td><td>' + (empTag(p) || '<span class="muted">—</span>') + '</td>' + monthCells(r) +
+        '<td class="c"><b>' + r.tos.size + '</b></td><td class="c">' + r.days + '</td></tr>';
+    }).join('') || '<tr><td colspan="20" class="muted">No travel in ' + esc(label) + '.</td></tr>') + '</tbody>';
+  $('rMore').style.display = people.length > repLimit ? 'inline-block' : 'none';
+
+  $('rOfficeTitle').textContent = 'Offices that travelled the most — ' + label;
+  $('rOfficeTable').innerHTML = '<thead><tr><th>#</th><th>Office</th>' + monthHead +
+    '<th class="c">Total TO</th><th class="c">Persons</th><th class="c">Person-days</th></tr></thead><tbody>' +
+    (offices.map((r, i) => '<tr><td class="muted small">' + (i + 1) + '</td>' +
+      '<td><span class="link" title="Show these travel orders" data-o="' + esc(r.key) + '" onclick="showOfficeList(this.dataset.o)"><b>' + esc(r.key) + '</b></span></td>' + monthCells(r) +
+      '<td class="c"><b>' + r.tos.size + '</b></td><td class="c">' + r.pids.size + '</td><td class="c">' + r.days + '</td></tr>').join('')
+      || '<tr><td colspan="20" class="muted">No travel in ' + esc(label) + '.</td></tr>') + '</tbody>';
+}
+['rPeriod', 'rOffice', 'rEmp', 'rQ'].forEach(id => $(id).addEventListener('input', () => { repLimit = 300; renderReports(); }));
+$('rMore').onclick = () => { repLimit += 300; renderReports(); };
+
+/** From the office report to the Travel Orders list of that office (and month). */
+function showOfficeList(office) {
+  $('lQ').value = ''; $('lOffice').value = office; $('lMonth').value = $('rPeriod').value; $('lStatus').value = 'notcancelled'; $('lConf').checked = false;
+  listLimit = 200; renderList(); show('list');
+}
+
+/* ======================== PERSON MODAL ======================== */
+let pmState = {};
+function openPerson(pid, presetName, addToForm) {
+  const p = pid ? peopleById[pid] : null;
+  pmState = { id: pid || null, addToForm: !!addToForm };
+  $('pmTitle').textContent = p ? 'Edit ' + p.id : 'Add person';
+  $('pmName').value = p ? p.name : (presetName || '').toUpperCase();
+  $('pmOffice').value = p ? p.office : ($('fOffice').value || '');
+  $('pmPos').value = p ? p.position : '';
+  pmState.employment = p ? p.employment : '';
+  renderPmEmp();
+  $('pmActive').checked = p ? p.active : true;
+  $('pmActiveBox').style.display = p ? 'block' : 'none';
+  $('pmMsg').innerHTML = '';
+  similarNames();
+  $('personModal').classList.add('show');
+  $('pmName').focus();
+}
+
+/** Warn when a new name looks like someone already in the list (e.g. missing middle initial). */
+function similarNames() {
+  const words = norm($('pmName').value).split(' ').filter(w => w.length > 1 && !/^(JR|SR|II|III|IV)$/.test(w));
+  const box = $('pmSimilar');
+  if (words.length < 2) { box.innerHTML = ''; return; }
+  const hits = D.people.filter(p => p.id !== pmState.id).filter(p => {
+    const pw = norm(p.name).split(' ');
+    return words.filter(w => pw.indexOf(w) >= 0).length >= 2;
+  }).slice(0, 5);
+  box.innerHTML = hits.length ? '<div class="alert warn small"><b>Similar names already in the list:</b><ul>' +
+    hits.map(p => '<li>' + esc(p.name) + ' — ' + esc(p.office) + ' (' + p.id + ')' + (pmState.addToForm ? ' <span class="link" onclick="pickExisting(\'' + p.id + '\')">use this</span>' : '') + '</li>').join('') +
+    '</ul>Make sure this is a different person.</div>' : '';
+}
+$('pmName').addEventListener('input', similarNames);
+
+function renderPmEmp() { $('pmEmp').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === pmState.employment)); }
+$('pmEmp').querySelectorAll('button').forEach(b => b.onclick = () => { pmState.employment = b.dataset.v; renderPmEmp(); });
+
+function pickExisting(pid) {
+  closeModal('personModal');
+  if (form.pids.indexOf(pid) < 0) form.pids.push(pid);
+  $('fTraveler').value = ''; $('fNotFound').style.display = 'none';
+  renderChips(); renderFormConflicts();
+}
+
+$('pmSave').onclick = async () => {
+  if (!pmState.employment) { $('pmMsg').innerHTML = '<div class="alert bad">Please click Permanent or COS.</div>'; return; }
+  $('pmSave').disabled = true;
+  try {
+    const res = await call('savePerson', { id: pmState.id, name: $('pmName').value, office: $('pmOffice').value, position: $('pmPos').value,
+      active: $('pmActive').checked, employment: pmState.employment });
+    closeModal('personModal');
+    applyPerson(res.person);
+    if (pmState.addToForm) pickExisting(res.id);
+    toast(res.name + ' saved');
+  } catch (e) {
+    $('pmMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>';
+  } finally { $('pmSave').disabled = false; }
+};
+
+/* ======================== USERS (Admin) ======================== */
+let USERS = [], umState = {};
+async function renderUsers() {
+  if (!isAdmin()) return;
+  try {
+    USERS = await call('getUsers');
+    $('uBody').innerHTML = USERS.map(u => '<tr' + (u.active ? '' : ' class="cancelled"') + '><td><b>' + esc(u.username) + '</b></td><td>' + esc(u.name) +
+      '</td><td>' + esc(u.role) + '</td><td><span class="pill ' + (u.active ? 'Active' : 'Cancelled') + '">' + (u.active ? 'Active' : 'Inactive') + '</span></td>' +
+      '<td class="small">' + esc(u.lastLogin || '—') + '</td><td class="actions"><button class="btn small" onclick="openUser(\'' + esc(u.username) + '\')">Edit</button></td></tr>').join('');
+  } catch (e) { toast(e.message || e); }
+}
+
+function openUser(username) {
+  const u = USERS.find(x => x.username === username);
+  umState = { isNew: !u };
+  $('umTitle').textContent = u ? 'Edit ' + u.username : 'Add user';
+  $('umUser').value = u ? u.username : ''; $('umUser').disabled = !!u;
+  $('umName').value = u ? u.name : ''; $('umRole').value = u ? u.role : 'Encoder';
+  $('umPw').value = ''; $('umPwLabel').textContent = u ? 'New password (leave blank to keep)' : 'Password *';
+  $('umActive').checked = u ? u.active : true; $('umActiveBox').style.display = u ? 'block' : 'none';
+  $('umMsg').innerHTML = '';
+  $('userModal').classList.add('show');
+}
+
+$('umSave').onclick = async () => {
+  $('umSave').disabled = true;
+  try {
+    await call('saveUser', { username: $('umUser').value, name: $('umName').value, role: $('umRole').value,
+      active: $('umActive').checked, password: $('umPw').value, isNew: umState.isNew });
+    closeModal('userModal'); toast('User saved'); renderUsers();
+  } catch (e) { $('umMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>'; }
+  finally { $('umSave').disabled = false; }
+};
+
+function openPw() {
+  ['pwOld', 'pwNew', 'pwNew2'].forEach(id => $(id).value = '');
+  $('pwMsg').innerHTML = '';
+  $('pwModal').classList.add('show');
+}
+
+$('pwSave').onclick = async () => {
+  if ($('pwNew').value !== $('pwNew2').value) { $('pwMsg').innerHTML = '<div class="alert bad">New passwords do not match.</div>'; return; }
+  $('pwSave').disabled = true;
+  try { await call('changePassword', $('pwOld').value, $('pwNew').value); closeModal('pwModal'); toast('Password changed'); }
+  catch (e) { $('pwMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>'; }
+  finally { $('pwSave').disabled = false; }
+};
+
+/** Copies each column name into its cells (data-label) so the phone layout can show it. */
+function labelCells() {
+  document.querySelectorAll('table.stack').forEach(t => {
+    const heads = Array.from(t.querySelectorAll('thead th')).map(th => th.textContent.trim());
+    if (!heads.length) return;
+    t.querySelectorAll('tbody tr').forEach(tr => Array.from(tr.children).forEach((td, i) => {
+      if (heads[i] && !td.hasAttribute('data-label') && td.colSpan === 1 && !td.classList.contains('actions')) td.setAttribute('data-label', heads[i]);
+    }));
+  });
+}
+new MutationObserver(labelCells).observe(document.body, { childList: true, subtree: true });
+
+if (TOKEN) startApp(); else showLogin();
+</script>
+</body>
+</html>

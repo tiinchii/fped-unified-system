@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root { --blue:#1f4e79; --blue2:#2e6aa5; --red:#c0392b; --redbg:#fdecea; --amber:#9a6700; --amberbg:#fff6e0;
+          --green:#1e8449; --greenbg:#e9f7ef; --line:#dde3ea; --muted:#5f6b7a; --bg:#f4f6f9; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',Roboto,Arial,sans-serif; font-size:14px; color:#1d2733; background:var(--bg); }
+  header { background:var(--blue); color:#fff; padding:0 20px; display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; }
+  header h1 { margin:0; font-size:17px; font-weight:600; padding:14px 0; margin-right:auto; }
+  nav { display:flex; flex-wrap:wrap; }
+  nav button { background:none; border:none; color:#cfe0f1; font:inherit; font-weight:600; padding:16px 12px; cursor:pointer; border-bottom:3px solid transparent; }
+  nav button.active { color:#fff; border-bottom-color:#fff; }
+  main { padding:18px 20px 60px; max-width:1300px; margin:0 auto; }
+  .view { display:none; } .view.active { display:block; }
+  h2 { font-size:18px; margin:0 0 14px; }
+  h3 { font-size:15px; margin:18px 0 8px; }
+  button.btn { font:inherit; cursor:pointer; border:1px solid var(--line); background:#fff; border-radius:6px; padding:7px 14px; }
+  button.btn.primary { background:var(--blue); color:#fff; border-color:var(--blue); }
+  button.btn.danger { background:var(--red); color:#fff; border-color:var(--red); }
+  button.btn.small { padding:3px 9px; font-size:12px; }
+  button.btn:disabled { opacity:.5; cursor:not-allowed; }
+  input, select, textarea { font:inherit; padding:7px 10px; border:1px solid #c8d1dc; border-radius:6px; background:#fff; width:100%; }
+  input[type=checkbox], input[type=radio] { width:auto; margin:0 6px 0 0; }
+  textarea { resize:vertical; min-height:60px; }
+  label.f { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.03em; }
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); }
+  .grid .wide { grid-column:1/-1; }
+  .grid > *, .doc > * { min-width:0; } /* long <option> text must not widen the page */
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px; }
+  .card + .card { margin-top:14px; }
+  .card.flush { padding:0; overflow:auto; }
+  .card h3 { margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+  .step { background:var(--blue); color:#fff; border-radius:50%; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; flex:none; }
+  .question { font-weight:600; margin:14px 0 8px; }
+  .question:first-child { margin-top:2px; }
+  .choices { display:flex; flex-wrap:wrap; gap:8px; }
+  .choice { display:flex; align-items:center; border:1px solid #c8d1dc; border-radius:6px; padding:8px 12px; cursor:pointer; background:#fff; }
+  .choice:has(input:checked) { border-color:var(--blue2); background:#e8f0f8; font-weight:600; }
+  .choice.block { display:flex; width:100%; align-items:flex-start; }
+  .choice.block input { margin-top:3px; }
+  .doc { display:grid; grid-template-columns:minmax(200px,1fr) minmax(200px,1fr); gap:10px; align-items:center; padding:8px 0; }
+  .doc label.chk { font-weight:600; display:flex; align-items:center; cursor:pointer; }
+  .sub { margin-top:12px; padding:12px; border-left:3px solid var(--blue2); background:#f7f9fc; border-radius:0 6px 6px 0; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:16px; }
+  .stat { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; cursor:pointer; }
+  .stat b { display:block; font-size:26px; }
+  .stat span { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+  .stat.amber b { color:var(--amber); } .stat.red b { color:var(--red); }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .two > div { min-width:0; }
+  @media (max-width:800px) { .two { grid-template-columns:1fr; } }
+  table { width:100%; border-collapse:collapse; }
+  th { position:sticky; top:0; background:#eef2f7; text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); padding:8px 10px; white-space:nowrap; }
+  td { padding:8px 10px; border-top:1px solid var(--line); vertical-align:top; }
+  td.num, th.num { text-align:right; white-space:nowrap; }
+  tr.cancelled td { color:#9aa3ad; }
+  tr.cancelled td .ttl { text-decoration:line-through; }
+  tr.over td { background:var(--redbg); }
+  tr.total td { font-weight:700; background:#f7f9fc; }
+  .items td, .items th { padding:6px; }
+  .items input { padding:6px 8px; }
+  .muted { color:var(--muted); } .small { font-size:12px; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; margin:1px 2px 1px 0; }
+  .pill.Cancelled { background:#eceef1; color:#888; }
+  .pill.review { background:var(--amberbg); color:var(--amber); }
+  .pill.signed { background:var(--greenbg); color:var(--green); }
+  .pill.nofped { background:#e3eefa; color:var(--blue2); }
+  .pill.rep { background:#f3e8fd; color:#6c3483; }
+  .pill.sppmp { background:#fdf0e6; color:#a04000; }
+  .pill.bad { background:var(--red); color:#fff; }
+  .pill.ok { background:var(--greenbg); color:var(--green); }
+  .tag { display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:4px; vertical-align:1px; background:#eef0f3; color:#4a5563; text-transform:uppercase; letter-spacing:.03em; }
+  .tag.Event { background:#e3eefa; color:var(--blue2); }
+  .tag.Equipment { background:#e9f7ef; color:var(--green); }
+  .tag.Repair { background:var(--amberbg); color:var(--amber); }
+  .tag.Hiring { background:#f3e8fd; color:#6c3483; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; align-items:center; }
+  .toolbar input, .toolbar select { width:auto; }
+  .toolbar input[type=search] { min-width:240px; flex:1; max-width:380px; }
+  .alert { padding:12px 14px; border-radius:8px; margin:12px 0; }
+  .alert.bad { background:var(--redbg); color:var(--red); }
+  .alert.ok { background:var(--greenbg); color:var(--green); }
+  .alert.warn { background:var(--amberbg); color:#6d4c00; }
+  .alert.info { background:#e8f0f8; color:var(--blue); }
+  .alert ul { margin:6px 0 0; padding-left:20px; }
+  .sim { list-style:none; margin:8px 0 0; padding:0; }
+  .sim li { background:#fff; border:1px solid #f0d9a4; border-radius:6px; padding:8px 10px; margin-top:6px; color:#1d2733; }
+  .sim li.other { border-color:var(--line); }
+  .sim li.pick { cursor:pointer; border-color:var(--line); }
+  .sim li.pick:hover { border-color:var(--blue2); background:#f7f9fc; }
+  details summary { cursor:pointer; font-weight:600; margin-top:8px; }
+  .link { color:var(--blue2); cursor:pointer; text-decoration:underline; }
+  .modal-bg { position:fixed; inset:0; background:rgba(20,30,40,.45); display:none; align-items:center; justify-content:center; padding:16px; z-index:10; }
+  .modal-bg.show { display:flex; }
+  .modal { background:#fff; border-radius:10px; padding:20px; width:100%; max-width:460px; max-height:calc(100vh - 32px); overflow:auto; }
+  .modal.big { max-width:880px; }
+  .modal h3 { margin-top:0; }
+  .modal .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; flex-wrap:wrap; }
+  dl.kv { display:grid; grid-template-columns:170px 1fr; gap:6px 12px; margin:0; }
+  dl.kv dt { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; padding-top:2px; }
+  dl.kv dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+  .vstep { border:1px solid var(--line); border-radius:8px; padding:14px; margin-top:12px; }
+  .vstep > h3 { margin:0 0 10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .vstep > h3 .btn { margin-left:auto; }
+  .prcard { border:1px solid var(--line); border-left:4px solid var(--blue2); border-radius:6px; padding:12px; margin-top:10px; }
+  .prcard.bad { border-left-color:var(--red); }
+  .prcard.cancelled { border-left-color:#aab; background:#fafbfc; }
+  .prcard h4 { margin:0 0 8px; font-size:14px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .prcard .btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .bar { height:8px; background:#e6ebf1; border-radius:4px; overflow:hidden; min-width:80px; }
+  .bar i { display:block; height:100%; background:var(--green); }
+  .bar i.warn { background:#d4a017; } .bar i.over { background:var(--red); }
+  .budgetbox { margin-top:12px; padding:10px 12px; border-radius:8px; background:#f7f9fc; border:1px solid var(--line); }
+  .budgetbox.over { background:var(--redbg); border-color:#f3b8b0; color:var(--red); }
+  .cluster { margin-bottom:12px; }
+  .cluster h4 { margin:0; padding:10px 12px; font-size:14px; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
+  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1d2733; color:#fff; padding:10px 18px; border-radius:8px; display:none; z-index:20; max-width:90vw; }
+  #loading { padding:80px; text-align:center; color:var(--muted); }
+  .userbox { display:flex; align-items:center; gap:8px; padding:8px 0; font-size:13px; }
+  .userbox select { width:auto; padding:4px 8px; background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.4); }
+  .userbox select option { color:#000; }
+  .userbox button { background:none; border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:6px; padding:4px 10px; cursor:pointer; font:inherit; font-size:12px; }
+  #loginView { max-width:360px; margin:70px auto; }
+  #loginView h2 { text-align:center; }
+  .viewer-hide.hidden, .admin-only.hidden, .hidden { display:none !important; }
+  .short { display:none; }
+  .form-actions { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; align-items:center; }
+
+  /* ---------- phones ---------- */
+  @media (max-width:700px) {
+    header { padding:0 12px; gap:0 8px; }
+    header h1 { font-size:15px; padding:10px 0; }
+    .userbox { gap:6px; padding:6px 0; }
+    #userName { display:none; }
+    .long { display:none; } .short { display:inline; }
+    nav { order:3; flex-wrap:nowrap; overflow-x:auto; margin:0 -12px; padding:0 4px; width:calc(100% + 24px); scrollbar-width:none; }
+    nav::-webkit-scrollbar { display:none; }
+    nav button { padding:10px 10px 9px; white-space:nowrap; flex:none; }
+    main { padding:12px 12px 60px; }
+    input, select, textarea { font-size:16px; } /* stops iPhone from zooming in on every field */
+    .toolbar input[type=search] { flex:1 1 100%; max-width:none; min-width:0; }
+    .toolbar select { flex:1 1 40%; }
+    .stats { grid-template-columns:1fr 1fr; gap:8px; }
+    .stat { padding:10px 12px; } .stat b { font-size:22px; } .stat span { font-size:11px; }
+    .card { padding:12px; }
+    .doc { grid-template-columns:1fr; }
+    dl.kv { grid-template-columns:1fr; } dl.kv dd { margin-bottom:6px; }
+    .modal { padding:14px; }
+    .vstep { padding:10px; }
+    button.btn { padding:9px 14px; }
+    button.btn.small { padding:6px 12px; font-size:13px; }
+
+    /* tables become one card per row; the column name is shown in front of each value */
+    table.stack thead { display:none; }
+    table.stack, table.stack tbody, table.stack tr, table.stack td { display:block; width:100%; }
+    table.stack tr { border-top:1px solid var(--line); padding:8px 0; }
+    table.stack tr:first-child { border-top:none; }
+    table.stack td { border:none; padding:3px 12px; white-space:normal !important; text-align:left; }
+    table.stack td[data-label] { position:relative; padding-left:108px; }
+    table.stack td[data-label]::before { content:attr(data-label); position:absolute; left:12px; top:5px; width:90px; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    table.stack td:empty { display:none; }
+    table.stack td.actions { padding-top:8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Procurement System</h1>
+  <nav id="mainNav" class="hidden">
+    <button data-view="dashboard" class="active">Dashboard</button>
+    <button data-view="form" class="viewer-hide">+ New<span class="long"> Procurement</span></button>
+    <button data-view="prForm" class="viewer-hide">+ PR</button>
+    <button data-view="list">Records</button>
+    <button data-view="budget">Budget</button>
+    <button data-view="repeats">Repeated</button>
+    <button data-view="users" class="admin-only">Users</button>
+  </nav>
+  <div class="userbox hidden" id="userBox">
+    <select id="yearSel" title="Year received"></select>
+    <span id="userName"></span>
+    <button onclick="refresh()" title="Load the latest changes made by other users">↻<span class="long"> Refresh</span></button>
+    <button onclick="openPw()" title="Change password"><span class="long">Change password</span><span class="short">🔑</span></button>
+    <button onclick="doLogout()">Logout</button>
+  </div>
+</header>
+
+<main>
+  <div id="loading" class="hidden">Loading…</div>
+
+  <!-- LOGIN -->
+  <section id="loginView" class="hidden">
+    <div class="card">
+      <h2>Login</h2>
+      <div class="grid" style="grid-template-columns:1fr">
+        <div><label class="f">Username</label><input id="lgUser" autocomplete="username"></div>
+        <div><label class="f">Password</label><input id="lgPass" type="password" autocomplete="current-password"></div>
+      </div>
+      <div id="lgMsg"></div>
+      <button class="btn primary" id="lgBtn" style="width:100%;margin-top:14px">Login</button>
+      <p class="muted small" style="text-align:center">Forgot your password? Ask the admin to reset it.</p>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="view" id="dashboard">
+    <div class="stats">
+      <div class="stat" onclick="goList({})"><b id="stAll">0</b><span>Procurements this year</span></div>
+      <div class="stat amber" onclick="goList({ doc: 'review' })"><b id="stReview">0</b><span>For review FPED</span></div>
+      <div class="stat red" onclick="goList({ doc: 'incomplete' })"><b id="stInc">0</b><span>PR incomplete / returned</span></div>
+      <div class="stat" onclick="goList({ doc: 'noPR' })"><b id="stNoPr">0</b><span>No PR yet</span></div>
+      <div class="stat red" onclick="show('budget'); renderBudget();"><b id="stOver">0</b><span>Offices over budget</span></div>
+      <div class="stat" onclick="goList({ status: 'Cancelled' })"><b id="stCancel">0</b><span>Cancelled</span></div>
+    </div>
+    <div class="two">
+      <div><h3>PR – incomplete / return to office</h3><div class="card flush"><table class="stack"><tbody id="dbInc"></tbody></table></div></div>
+      <div><h3>For review FPED (latest)</h3><div class="card flush"><table class="stack"><tbody id="dbReview"></tbody></table></div></div>
+    </div>
+  </section>
+
+  <!-- STEP 1: PROCUREMENT FORM -->
+  <section class="view" id="form">
+    <h2 id="formTitle">New Procurement</h2>
+    <div id="fInfo"></div>
+
+    <div class="card">
+      <h3><span class="step">1</span> Proposal</h3>
+      <div class="grid">
+        <div><label class="f">Date received *</label><input type="date" id="fReceived"></div>
+        <div><label class="f">Office *</label><select id="fOffice"></select></div>
+        <div><label class="f">Prepared by <span class="fReq">*</span></label><input id="fBy" list="byOpts" autocomplete="off"></div>
+        <div><label class="f">DTS No. <span class="fReq">*</span></label><input id="fDts"></div>
+        <div><label class="f">Logbook No. (G#) <span class="fReq">*</span></label><input id="fLog" placeholder="e.g. G#224-024"></div>
+      </div>
+
+      <div class="question">Anong klaseng procurement?</div>
+      <div class="choices" id="fTypes"></div>
+
+      <div class="question">Proposal</div>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="fPType" value="Activity Proposal"> Activity Proposal</label>
+        <label class="choice"><input type="radio" name="fPType" value="Project Proposal"> Project Proposal</label>
+        <label class="choice"><input type="radio" name="fPType" value="None"> Wala (PR lang)</label>
+      </div>
+      <div class="doc" id="fPStatusBox"><span class="muted small">Status ng <span id="fPTypeName"></span> *</span><select id="fPStatus" class="docst"></select></div>
+      <div class="doc">
+        <label class="chk"><input type="checkbox" id="fWithATC"> May Authority to Conduct (ATC)</label>
+        <select id="fAtcStatus" class="docst"></select>
+      </div>
+
+      <label class="f" style="margin-top:12px">Title ng activity / procurement *</label>
+      <input id="fTitle" placeholder="e.g. BFAR Risk Management Enhancement Training" autocomplete="off">
+      <div id="fSimilar"></div>
+
+      <div class="sub" id="fEventBox">
+        <div class="grid">
+          <div class="wide"><label class="f">Venue *</label><input id="fVenue" placeholder="e.g. BFAR-CAR, Baguio City"></div>
+          <div><label class="f">Date of event (start) *</label><input type="date" id="fStart"></div>
+          <div><label class="f">Date of event (end)</label><input type="date" id="fEnd"></div>
+        </div>
+      </div>
+      <div class="sub" id="fItemBox">
+        <label class="f"><span id="fItemLabel"></span> <span id="fItemReq">*</span></label>
+        <textarea id="fItem" rows="2" style="min-height:0"></textarea>
+      </div>
+      <div class="sub" id="fHireBox">
+        <div class="grid">
+          <div><label class="f">Contract start *</label><input type="date" id="fCStart"></div>
+          <div><label class="f">Contract end *</label><input type="date" id="fCEnd"></div>
+          <div class="muted small" style="align-self:end" id="fCLen"></div>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+        <div><label class="f">Amount <span id="fAmtReq">*</span></label><input type="number" id="fAmount" min="0" step="0.01" placeholder="0.00"></div>
+      </div>
+    </div>
+
+    <div class="card" id="fRepeatCard">
+      <h3><span class="step">!</span> Repeat ba ito?</h3>
+      <p class="muted" style="margin-top:0">May kahawig na activity ang office na ito. Piliin kung ano ito bago i-save.</p>
+      <div id="fRepeatChoices" style="display:grid;gap:6px"></div>
+      <div class="grid" id="fRepeatOfBox" style="margin-top:10px">
+        <div><label class="f">Alin sa mga ito? *</label><select id="fRepeatOf"></select></div>
+        <div><label class="f">Note</label><input id="fRepeatNote" placeholder="e.g. 2nd batch / ibinalik ng FPED / bagong petsa"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="f">Remarks</label><input id="fRemarks">
+      <div id="fMsg"></div>
+      <div class="form-actions">
+        <button class="btn primary" id="fSave">Save</button>
+        <button class="btn" onclick="resetForm()">Clear</button>
+        <span class="small" id="fSaveHint" style="color:var(--red)"></span>
+        <button class="btn danger" id="fCancelRec" style="margin-left:auto;display:none" onclick="cancelFromForm()">Cancel this procurement</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 + 3: PURCHASE REQUEST FORM -->
+  <section class="view" id="prForm">
+    <h2 id="pTitleH">New Purchase Request</h2>
+
+    <div class="card" id="pFindCard">
+      <h3>Para saang procurement?</h3>
+      <input type="search" id="pFind" placeholder="Hanapin ang DTS ng proposal, title, office o ID…" autocomplete="off">
+      <div class="muted small" style="margin-top:6px">Kasama ang lahat ng taon. Wala pa sa listahan? <span class="link" onclick="show('form')">+ New procurement</span> muna.</div>
+      <ul class="sim" id="pFindList"></ul>
+    </div>
+
+    <div id="pMain">
+      <div class="card" id="pRecCard"></div>
+
+      <div class="card">
+        <h3><span class="step">2</span> Purchase Request (PR)</h3>
+        <div class="grid">
+          <div><label class="f">DTS No. ng PR</label><input id="pDts" placeholder="e.g. PR27010132LIB"></div>
+          <div><label class="f">Date received *</label><input type="date" id="pReceived"></div>
+          <div><label class="f">PR date</label><input type="date" id="pDate"></div>
+          <div><label class="f">Requisitioner</label><input id="pReq" list="reqOpts" autocomplete="off"></div>
+          <div class="wide"><label class="f">Title ng activity *</label><input id="pTitle"></div>
+        </div>
+        <div id="pDtsWarn"></div>
+        <div class="grid" id="pEventBox" style="margin-top:14px">
+          <div class="wide"><label class="f">Venue *</label><input id="pVenue"></div>
+          <div><label class="f">Date (start) *</label><input type="date" id="pStart"></div>
+          <div><label class="f">Date (end)</label><input type="date" id="pEnd"></div>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div><label class="f">Amount *</label><input type="number" id="pAmount" min="0" step="0.01" placeholder="0.00"></div>
+          <div><label class="f">PR status *</label><select id="pStatus" class="docst"></select></div>
+          <div class="wide"><label class="f">Kapalit ng na-cancel na PR?</label><select id="pReplaces"></select>
+            <div class="muted small" style="margin-top:4px">Kung bagong PR ito ng parehong activity (hal. binago ang petsa), piliin ang DTS ng dating PR na na-cancel.</div></div>
+        </div>
+        <div id="pBudget"></div>
+      </div>
+
+      <div class="card">
+        <h3>Attachments</h3>
+        <div class="question">PPMP o SPPMP?</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="pPlan" value="PPMP"> May PPMP</label>
+          <label class="choice"><input type="radio" name="pPlan" value="SPPMP"> Walang PPMP – may SPPMP</label>
+          <label class="choice"><input type="radio" name="pPlan" value=""> Wala pareho</label>
+        </div>
+        <div class="sub" id="pJustBox">
+          <label class="f">Justification re SPPMP</label>
+          <textarea id="pJust" placeholder="Bakit SPPMP (hindi kasama sa PPMP)?"></textarea>
+          <div class="muted small" style="margin-top:4px">Ang mismong SPPMP (items at amount) ay ilalagay sa <b>Step 3</b> sa record, pagbalik ng papel galing sa office.</div>
+        </div>
+        <div id="pFacBox">
+          <div class="question">Venue: Government o Non-Government facility?</div>
+          <div class="choices">
+            <label class="choice"><input type="radio" name="pFac" value="Government"> Government facility</label>
+            <label class="choice"><input type="radio" name="pFac" value="Non-Government"> Non-Government</label>
+          </div>
+          <div class="sub" id="pFacJustBox">
+            <label class="f">Justification kung bakit hindi sa government facility</label>
+            <textarea id="pFacJust"></textarea>
+          </div>
+        </div>
+        <div id="pCheck"></div>
+      </div>
+
+      <div class="card">
+        <label class="f">Remarks</label><input id="pRemarks">
+        <div id="pMsg"></div>
+        <div class="form-actions">
+          <button class="btn primary" id="pSave">Save PR</button>
+          <button class="btn" onclick="prf.recordId ? viewRecord(prf.recordId) : resetPRForm()">Back</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIST -->
+  <section class="view" id="list">
+    <div class="toolbar">
+      <input type="search" id="lQ" placeholder="Search title, office, DTS (proposal or PR), G#, ID…">
+      <select id="lOffice"><option value="">All offices</option></select>
+      <select id="lType"><option value="">All kinds</option></select>
+      <select id="lDoc">
+        <option value="">All</option>
+        <option value="review">Has a document for review FPED</option>
+        <option value="noPR">No PR yet</option>
+        <option value="withPR">With PR</option>
+        <option value="incomplete">PR incomplete / returned</option>
+        <option value="sppmp">PR with SPPMP</option>
+        <option value="nongov">Non-Government facility</option>
+        <option value="cancelledPR">Has a cancelled PR</option>
+      </select>
+      <select id="lStatus">
+        <option value="Active">Not cancelled</option>
+        <option value="Cancelled">Cancelled</option>
+        <option value="">All</option>
+      </select>
+      <label class="small"><input type="checkbox" id="lRep"> Repeats only</label>
+      <span class="muted small" id="lCount"></span>
+    </div>
+    <div class="card flush"><table class="stack">
+      <thead><tr><th>ID / Received</th><th>Office</th><th>Title</th><th>Documents</th><th class="num">Amount</th><th>DTS / G#</th><th></th></tr></thead>
+      <tbody id="lBody"></tbody>
+    </table></div>
+    <div style="text-align:center;margin-top:10px"><button class="btn" id="lMore" style="display:none">Show more</button></div>
+  </section>
+
+  <!-- BUDGET -->
+  <section class="view" id="budget">
+    <div class="toolbar">
+      <h2 style="margin:0 8px 0 0" id="bTitle">Budget</h2>
+      <input type="search" id="bQ" placeholder="Search office…">
+      <label class="small"><input type="checkbox" id="bAll"> Show offices without budget</label>
+    </div>
+    <p class="muted small" style="margin-top:0">Kusang ibinabawas ang amount ng bawat PR na natanggap sa taong ito. Hindi kasama ang cancelled na PR (o PR ng cancelled na procurement).
+      I-click ang office para makita ang mga PR nito.</p>
+    <div class="card flush"><table class="stack">
+      <thead><tr><th>Office</th><th class="num">Budget</th><th class="num">Used (PRs)</th><th class="num">Remaining</th><th>% used</th><th class="num">PRs</th><th></th></tr></thead>
+      <tbody id="bBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- REPEATS -->
+  <section class="view" id="repeats">
+    <div class="toolbar">
+      <input type="search" id="rQ" placeholder="Search title…">
+      <select id="rOffice"><option value="">All offices</option></select>
+      <label class="small"><input type="checkbox" id="rCross"> Include other offices</label>
+      <span class="muted small" id="rCount"></span>
+    </div>
+    <p class="muted small" style="margin-top:0">Mga activity na kahawig ng isa't isa (lahat ng taon), naka-grupo. Kasama ang may record sa taong napili sa itaas.</p>
+    <div id="rBody"></div>
+  </section>
+
+  <!-- USERS (Admin) -->
+  <section class="view" id="users">
+    <div class="toolbar">
+      <button class="btn primary" onclick="openUser()">+ Add user</button>
+      <span class="muted small">Admin = everything · Encoder = records &amp; budget · Viewer = view only</span>
+      <span class="alert info small hidden" id="uShared" style="margin:0;padding:6px 10px">Same logins as the Travel Order System: changes here also apply there.</span>
+    </div>
+    <div class="card flush"><table class="stack">
+      <thead><tr><th>Username</th><th>Full name</th><th>Role</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+      <tbody id="uBody"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<!-- VIEW RECORD MODAL -->
+<div class="modal-bg" id="viewModal"><div class="modal big">
+  <h3 id="vmTitle"></h3>
+  <div id="vmBody"></div>
+  <div class="actions" id="vmActions"></div>
+</div></div>
+
+<!-- ROUTING MODAL (step 4) -->
+<div class="modal-bg" id="routeModal"><div class="modal">
+  <h3 id="rtTitle">Routing</h3>
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="wide"><label class="f">Para sa</label><select id="rtFor"></select></div>
+    <div class="wide"><label class="f">Ano ang nangyari? *</label><select id="rtAction"></select></div>
+    <div class="wide"><label class="f" id="rtPersonLabel">Kanino / sino ang nag-review *</label><input id="rtPerson" list="personOpts" autocomplete="off"></div>
+    <div><label class="f">Date *</label><input type="date" id="rtDate"></div>
+    <div><label class="f">Time *</label><input type="time" id="rtTime"></div>
+    <div class="wide"><label class="f">Remarks</label><input id="rtRemarks"></div>
+  </div>
+  <div id="rtMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('routeModal')">Back</button><button class="btn primary" id="rtSave">Save</button></div>
+</div></div>
+
+<!-- CANCEL / RESTORE MODAL -->
+<div class="modal-bg" id="statusModal"><div class="modal">
+  <h3 id="smTitle"></h3>
+  <p class="muted" id="smInfo"></p>
+  <div class="grid" style="grid-template-columns:1fr 1fr" id="smCancelBox">
+    <div><label class="f">Date ng cancel *</label><input type="date" id="smDate"></div>
+    <div><label class="f">Time *</label><input type="time" id="smTime"></div>
+    <div class="wide"><label class="f">Sino ang nagsabi na i-cancel? *</label><input id="smBy" list="personOpts" autocomplete="off"></div>
+  </div>
+  <label class="f" id="smReasonLabel" style="margin-top:12px">Reason</label><input id="smReason">
+  <div id="smMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('statusModal')">Back</button><button class="btn danger" id="smOk"></button></div>
+</div></div>
+
+<!-- SPPMP MODAL (step 3) -->
+<div class="modal-bg" id="sppmpModal"><div class="modal big">
+  <h3 id="spTitle">SPPMP</h3>
+  <p class="muted small" id="spInfo"></p>
+  <div class="card flush">
+    <table class="items stack">
+      <thead><tr><th>Activity / Item / Description *</th><th class="num">Amount *</th><th></th></tr></thead>
+      <tbody id="spItems"></tbody>
+    </table>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:8px">
+    <button class="btn small" onclick="addItem()">+ Add item</button>
+    <span>SPPMP total: <b id="spTotal">0.00</b> <span class="small" id="spDiff"></span></span>
+  </div>
+  <label class="f" style="margin-top:12px">Justification re SPPMP</label>
+  <textarea id="spJust" placeholder="Bakit SPPMP (hindi kasama sa PPMP)?"></textarea>
+  <div id="spMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('sppmpModal')">Back</button><button class="btn primary" id="spSave">Save SPPMP</button></div>
+</div></div>
+
+<!-- BUDGET MODAL -->
+<div class="modal-bg" id="budgetModal"><div class="modal">
+  <h3 id="bmTitle">Budget</h3>
+  <label class="f">Budget ng buong office *</label><input type="number" id="bmAmount" min="0" step="0.01">
+  <p class="muted small" id="bmInfo"></p>
+  <div id="bmMsg"></div>
+  <div class="actions"><button class="btn" id="bmRemove" style="margin-right:auto">Remove budget</button><button class="btn" onclick="closeModal('budgetModal')">Back</button><button class="btn primary" id="bmSave">Save</button></div>
+</div></div>
+
+<!-- USER MODAL -->
+<div class="modal-bg" id="userModal"><div class="modal">
+  <h3 id="umTitle">Add user</h3>
+  <div class="grid" style="grid-template-columns:1fr">
+    <div><label class="f">Username *</label><input id="umUser" placeholder="e.g. jdelacruz" autocomplete="off"></div>
+    <div><label class="f">Full name</label><input id="umName"></div>
+    <div><label class="f">Role</label><select id="umRole"><option>Encoder</option><option>Viewer</option><option>Admin</option></select></div>
+    <div><label class="f" id="umPwLabel">Password *</label><input id="umPw" type="password" autocomplete="new-password" placeholder="at least 8 characters"></div>
+    <div id="umActiveBox"><label class="small"><input type="checkbox" id="umActive" checked> Active (can log in)</label></div>
+  </div>
+  <div id="umMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('userModal')">Cancel</button><button class="btn primary" id="umSave">Save</button></div>
+</div></div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-bg" id="pwModal"><div class="modal">
+  <h3>Change password</h3>
+  <div class="grid" style="grid-template-columns:1fr">
+    <div><label class="f">Current password</label><input id="pwOld" type="password" autocomplete="current-password"></div>
+    <div><label class="f">New password</label><input id="pwNew" type="password" autocomplete="new-password" placeholder="at least 8 characters"></div>
+    <div><label class="f">Repeat new password</label><input id="pwNew2" type="password" autocomplete="new-password"></div>
+  </div>
+  <div id="pwMsg"></div>
+  <div class="actions"><button class="btn" onclick="closeModal('pwModal')">Cancel</button><button class="btn primary" id="pwSave">Save</button></div>
+</div></div>
+
+<datalist id="byOpts"></datalist>
+<datalist id="reqOpts"></datalist>
+<datalist id="personOpts"></datalist>
+<div id="toast"></div>
+
+<script>
+/* ======================== STATE ======================== */
+let D = null;
+let recById = {}, prById = {}, recTokens = {}, W = {}, clusterCache = null, budgetOf = {};
+let form = { id: null, similar: [] };            // step 1 form
+let prf = { id: null, recordId: null, items: [] }; // PR form (steps 2 + 3)
+let listLimit = 200, year = 0;
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const REPEAT_LABEL = {
+  'Repeat': ['Repeat', 'inuulit ang activity (hal. bagong batch, taun-taon)'],
+  'Resubmission': ['Re-submission', 'ipinasa ulit (dating na-cancel, binago ang petsa, o ibinalik)'],
+  'Same activity': ['Kaparehong activity', 'dagdag na dokumento ng activity na naipasa na'],
+  'Different': ['Hindi pareho', 'magkahawig lang ang pangalan'],
+};
+/** kinds with item details: [label, example, required] (same as DETAIL_TYPES / DETAIL_REQUIRED in Code.gs) */
+const ITEM_LABEL = {
+  'Equipment': ['Anong equipment?', 'e.g. 2 units laptop, 1 unit printer', true],
+  'Repair': ['Ano ang ire-repair?', 'e.g. aircon ng Conference Room, 2nd floor', true],
+  'Others': ['Ano ito? (optional)', 'e.g. supplies para sa opisina', false],
+};
+const TYPE_LABEL = { 'Event': 'Event', 'Equipment': 'Equipment', 'Repair': 'Repair', 'Hiring of Personnel': 'Hiring of Personnel', 'Others': 'Others' };
+
+/* ======================== HELPERS ======================== */
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toDate(iso) { const p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function fmt(iso) { if (!iso) return ''; const d = toDate(iso); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+function range(s, e) {
+  if (!s) return '';
+  if (!e || s === e) return fmt(s);
+  const a = toDate(s), b = toDate(e);
+  if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()) return MON[a.getMonth()] + ' ' + a.getDate() + '–' + b.getDate() + ', ' + a.getFullYear();
+  if (a.getFullYear() === b.getFullYear()) return MON[a.getMonth()] + ' ' + a.getDate() + ' – ' + MON[b.getMonth()] + ' ' + b.getDate() + ', ' + a.getFullYear();
+  return fmt(s) + ' – ' + fmt(e);
+}
+/** '2027-01-23 15:51' -> 'Jan 23, 2027 3:51 PM' */
+function fmtDT(s) {
+  if (!s) return '';
+  const p = s.split(' '), t = (p[1] || '').split(':');
+  if (!t[0] || p[1] === '00:00') return fmt(p[0]); // 00:00 = no time recorded (e.g. 2026 import)
+  const h = +t[0];
+  return fmt(p[0]) + ' ' + ((h % 12) || 12) + ':' + t[1] + ' ' + (h < 12 ? 'AM' : 'PM');
+}
+function nowTime() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+/** Number of months of a contract, e.g. Jan 1 – Jun 30 -> "6 months" */
+function contractLength(s, e) {
+  if (!s || !e || e < s) return '';
+  const a = toDate(s), b = toDate(e);
+  b.setDate(b.getDate() + 1);
+  const m = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth() + (b.getDate() - a.getDate()) / 30;
+  const days = Math.round((b - a) / 864e5);
+  return m >= 1 ? (Math.round(m * 10) / 10) + ' month(s)' : days + ' day(s)';
+}
+function money(n) { return (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function peso(n) { return (n < 0 ? '-₱' : '₱') + money(Math.abs(n)); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 4500); }
+function closeModal(id) { $(id).classList.remove('show'); }
+/**
+ * Scrolls only this page. el.scrollIntoView() also scrolls the Google page around the app,
+ * which the user cannot scroll back, so the app gets stuck halfway up.
+ */
+function scrollToEl(el) { window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 10, behavior: 'smooth' }); }
+function radio(name) { const el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : null; }
+function setRadio(name, v) { document.querySelectorAll('input[name=' + name + ']').forEach(el => el.checked = v != null && el.value === v); }
+function rawCall(fn, ...args) {
+  return new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+}
+/** Server call with the login token; sends the user back to the login page when the session expired. */
+async function call(fn, ...args) {
+  try {
+    return await rawCall(fn, TOKEN, ...args);
+  } catch (e) {
+    if (String(e.message || e).indexOf('SESSION_EXPIRED') >= 0) {
+      showLogin('Your session has expired. Please log in again.');
+      throw new Error('Please log in again.');
+    }
+    throw e;
+  }
+}
+function store(op, v) {
+  try {
+    if (op === 'get') return sessionStorage.getItem('ap_token') || '';
+    if (op === 'set') sessionStorage.setItem('ap_token', v); else sessionStorage.removeItem('ap_token');
+  } catch (e) { /* storage blocked: user just logs in again on reload */ }
+  return '';
+}
+function canEdit() { return D && D.user.role !== 'Viewer'; }
+function isAdmin() { return D && D.user.role === 'Admin'; }
+function officeOptions(sel, withAll) {
+  sel.innerHTML = (withAll ? '<option value="">All offices</option>' : '<option value="">— select —</option>') +
+    D.offices.map(o => '<option>' + esc(o) + '</option>').join('');
+}
+function idLink(id) { return '<span class="link" onclick="viewRecord(\'' + esc(id) + '\')">' + esc(id) + '</span>'; }
+function typeTag(r) { return r.procType ? '<span class="tag ' + esc(r.procType.split(' ')[0]) + '">' + esc(r.procType) + '</span>' : ''; }
+
+/* ---------- documents, PRs and their status ---------- */
+const SHORT_STATUS = { 'For Review FPED': 'for review', 'Signed w/o FPED Review': 'signed w/o review', 'Signed w/ FPED Review': 'signed' };
+function statusClass(s) { return s === 'For Review FPED' ? 'review' : s === 'Signed w/o FPED Review' ? 'nofped' : s ? 'signed' : ''; }
+function stShort(s) { return s ? ' · ' + SHORT_STATUS[s] : ''; }
+function activePRs(r) { return r.prs.filter(p => p.status !== 'Cancelled'); }
+function prTotal(r) { return activePRs(r).reduce((s, p) => s + (Number(p.amount) || 0), 0); }
+function isEvent(r) { return r.procType === 'Event'; }
+function hasProposal(r) { return r.proposalType && r.proposalType !== 'None'; }
+
+/** Attachments a PR still lacks (rules of step 2). Imported 2026 PRs are not checked. */
+function prMissing(p, r) {
+  if (p.lite || p.source || p.status === 'Cancelled') return [];
+  const out = [];
+  if (!p.plan) out.push('PPMP (o SPPMP kung walang PPMP)');
+  if (p.plan === 'SPPMP' && !String(p.justification || '').trim()) out.push('Justification re SPPMP');
+  if (isEvent(r) && !p.facility) out.push('Government o Non-Government facility');
+  if (p.facility === 'Non-Government' && !String(p.facilityJustification || '').trim()) out.push('Justification sa Non-Government facility');
+  return out;
+}
+/** Last "Returned to office" entry of a PR, if it is the latest routing entry of that PR. */
+function returnedEntry(p, r) {
+  const mine = (r.routing || []).filter(x => x.prId === p.id).sort((a, b) => a.when.localeCompare(b.when));
+  const last = mine[mine.length - 1];
+  return last && last.action === 'Returned to office' ? last : null;
+}
+/** 'Cancelled' | 'Returned' | 'Incomplete' | 'Complete' */
+function prState(p, r) {
+  if (p.status === 'Cancelled') return 'Cancelled';
+  if (!prMissing(p, r).length) return 'Complete';
+  return returnedEntry(p, r) ? 'Returned' : 'Incomplete';
+}
+function stateLabel(p, r) {
+  const s = prState(p, r);
+  return s === 'Incomplete' ? '<span class="pill bad">Incomplete – return to office</span>'
+    : s === 'Returned' ? '<span class="pill bad">Returned to office ' + esc(fmtDT(returnedEntry(p, r).when).replace(/, \d{4}/, '')) + '</span>' : '';
+}
+function prPills(p, r) {
+  if (p.status === 'Cancelled') return '<span class="pill Cancelled" title="' + esc(p.title + ' · ' + p.id + (p.dts ? ' · DTS ' + p.dts : '')) + '">PR cancelled</span>';
+  const s = prState(p, r);
+  return '<span class="pill ' + statusClass(p.prStatus) + '" title="' + esc(p.id + (p.dts ? ' · DTS ' + p.dts : '')) + '">PR' + stShort(p.prStatus) + '</span>' +
+    (p.plan === 'SPPMP' ? '<span class="pill sppmp">SPPMP</span>' : '') +
+    (s === 'Incomplete' ? '<span class="pill bad">Incomplete</span>' : s === 'Returned' ? '<span class="pill bad">Returned</span>' : '');
+}
+function docPills(r) {
+  const out = [];
+  if (hasProposal(r)) out.push('<span class="pill ' + statusClass(r.proposalStatus) + '" title="' + esc(r.proposalType + ' · ' + r.proposalStatus) + '">' +
+    (r.proposalType === 'Project Proposal' ? 'PP' : 'AP') + stShort(r.proposalStatus) + '</span>');
+  if (r.withATC) out.push('<span class="pill ' + statusClass(r.atcStatus) + '">ATC' + stShort(r.atcStatus) + '</span>');
+  r.prs.forEach(p => out.push(prPills(p, r)));
+  if (!activePRs(r).length && r.status !== 'Cancelled') out.push('<span class="muted small">no PR yet</span>');
+  return out.join('') || '<span class="muted small">—</span>';
+}
+function hasReview(r) {
+  return (hasProposal(r) && r.proposalStatus === 'For Review FPED') || (r.withATC && r.atcStatus === 'For Review FPED') ||
+    activePRs(r).some(p => p.prStatus === 'For Review FPED');
+}
+function hasIncomplete(r) { return r.status !== 'Cancelled' && activePRs(r).some(p => prState(p, r) !== 'Complete'); }
+function isRepeat(r) { return r.repeatType && r.repeatType !== 'Different'; }
+function repeatPill(r) {
+  return isRepeat(r) ? '<span class="pill rep">' + esc(REPEAT_LABEL[r.repeatType][0]) + (r.repeatOf ? ' of ' + esc(r.repeatOf) : '') + '</span>' : '';
+}
+function whenWhere(r) {
+  if (isEvent(r)) return [range(r.start, r.end), esc(r.venue)].filter(Boolean).join(' · ');
+  if (r.procType === 'Hiring of Personnel' && r.start) return 'Contract ' + range(r.start, r.end);
+  if (r.details) return esc(r.details.length > 90 ? r.details.slice(0, 90) + '…' : r.details);
+  return '';
+}
+
+/* ======================== REPEAT CHECK ======================== */
+// Same rules as Code.gs (simTokens / simWeights / similarity), so what is shown while typing
+// matches the check done when saving. Keep both in sync.
+const SIM_STOP = new Set(('THE AND FOR WITH FROM INTO ONTO THRU VIA ITS OUR ALL ETC PER ' +
+  'ACTIVITY ACTIVITIES PROPOSAL REQUEST AUTHORITY CONDUCT CONDUCTING PURCHASE PROCUREMENT SUPPLY DELIVERY ' +
+  'BFAR BUREAU FISHERIES AQUATIC RESOURCES CENTRAL OFFICE BATCH ' +
+  'JAN JANUARY FEB FEBRUARY MAR MARCH APR APRIL MAY JUN JUNE JUL JULY AUG AUGUST SEP SEPT SEPTEMBER ' +
+  'OCT OCTOBER NOV NOVEMBER DEC DECEMBER').split(' '));
+const SIM_MIN = 0.6;
+
+function simTokens(text) {
+  const out = [];
+  String(text || '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').split(' ').forEach(w => {
+    if (w.length < 3 || /\d/.test(w) || SIM_STOP.has(w)) return;
+    if (w.length > 4 && /[^S]S$/.test(w)) w = w.slice(0, -1);
+    if (out.indexOf(w) < 0) out.push(w);
+  });
+  return out;
+}
+function simWeights(docs) {
+  const df = {};
+  docs.forEach(d => new Set(d).forEach(w => { df[w] = (df[w] || 0) + 1; }));
+  const n = docs.length + 1, w = {};
+  Object.keys(df).forEach(k => { w[k] = Math.log(n / df[k]); });
+  w._unknown = Math.log(n);
+  return w;
+}
+function similarity(a, b, weights) {
+  if (!a.length || !b.length) return 0;
+  const wt = t => Math.max(weights[t] != null ? weights[t] : weights._unknown, 0.05);
+  const setB = new Set(b);
+  const common = a.filter(t => setB.has(t));
+  if (!common.length) return 0;
+  const wa = a.reduce((s, t) => s + wt(t), 0), wb = b.reduce((s, t) => s + wt(t), 0);
+  const wc = common.reduce((s, t) => s + wt(t), 0);
+  const dice = 2 * wc / (wa + wb);
+  if (dice >= SIM_MIN) return dice;
+  const inside = wc / Math.min(wa, wb);
+  if (common.length >= 2 && inside >= 0.85) return Math.max(SIM_MIN, inside * 0.8);
+  return 0;
+}
+/** Title of the record and the titles of its PRs (when different). */
+function textsOf(r) { return [r.title].concat(r.prs.map(p => p.title).filter(t => t && t !== r.title)); }
+
+/** Best match between two lists of token lists: { score, k } where k = index of the matched text in `theirs`. */
+function bestMatch(mine, theirs) {
+  let score = 0, k = -1;
+  theirs.forEach((tt, i) => mine.forEach(m => { const s = similarity(m, tt, W); if (s > score) { score = s; k = i; } }));
+  return { score, k };
+}
+function findSimilar(title, excludeId, office) {
+  const mine = [simTokens(title)].filter(t => t.length);
+  if (!mine.length) return [];
+  const out = [];
+  D.records.forEach(r => {
+    if (r.id === excludeId) return;
+    const m = bestMatch(mine, recTokens[r.id]);
+    if (m.score) out.push({ id: r.id, score: Math.round(m.score * 100), matched: textsOf(r)[m.k], title: r.title,
+      office: r.office, received: r.received, start: r.start, status: r.status });
+  });
+  return out.sort((a, b) => (b.office === office) - (a.office === office) || b.score - a.score ||
+    b.received.localeCompare(a.received)).slice(0, 20);
+}
+
+/**
+ * Groups of look-alike records (computed once per data load, per "include other offices" setting).
+ * Oldest first: a record joins the group whose FIRST record it looks most like, otherwise it starts
+ * a new group. Comparing with the first record only stops chains (A like B, B like C, …) from
+ * pulling unrelated activities together. A record marked as a repeat of another joins that one's group.
+ */
+function clusters(cross) {
+  const key = cross ? 'x' : 's';
+  if (clusterCache && clusterCache[key]) return clusterCache[key];
+  const recs = D.records.slice().sort((a, b) => a.received.localeCompare(b.received) || a.id.localeCompare(b.id));
+  const groups = [], groupOf = {};
+  recs.forEach(r => {
+    let g = isRepeat(r) && groupOf[r.repeatOf];
+    if (!g) {
+      let best = 0;
+      groups.forEach(x => {
+        if (!cross && x.office !== r.office) return;
+        const s = bestMatch(recTokens[r.id], recTokens[x.lead]).score;
+        if (s > best) { best = s; g = x; }
+      });
+    }
+    if (!g) groups.push(g = { lead: r.id, office: r.office, list: [] });
+    g.list.push(r); groupOf[r.id] = g;
+  });
+  clusterCache = clusterCache || {};
+  return clusterCache[key] = groups.filter(g => g.list.length > 1).map(g => g.list);
+}
+
+/* ======================== LOGIN ======================== */
+let TOKEN = store('get'), booted = false;
+
+function showLogin(msg) {
+  TOKEN = ''; store('del'); D = null; booted = false;
+  ['mainNav', 'userBox', 'loading'].forEach(id => $(id).classList.add('hidden'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.modal-bg').forEach(m => m.classList.remove('show'));
+  $('loginView').classList.remove('hidden');
+  $('lgPass').value = '';
+  $('lgMsg').innerHTML = msg ? '<div class="alert warn">' + esc(msg) + '</div>' : '';
+  $('lgUser').focus();
+}
+
+async function doLogin() {
+  const u = $('lgUser').value.trim(), p = $('lgPass').value;
+  if (!u || !p) { $('lgMsg').innerHTML = '<div class="alert bad">Enter your username and password.</div>'; return; }
+  $('lgBtn').disabled = true; $('lgMsg').innerHTML = '';
+  try {
+    const res = await rawCall('login', u, p);
+    TOKEN = res.token; store('set', TOKEN);
+    startApp(res.data);
+  } catch (e) {
+    $('lgMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>';
+  } finally { $('lgBtn').disabled = false; }
+}
+$('lgBtn').onclick = doLogin;
+$('lgPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+$('lgUser').addEventListener('keydown', e => { if (e.key === 'Enter') $('lgPass').focus(); });
+
+async function doLogout() {
+  try { await rawCall('logout', TOKEN); } catch (e) { /* ignore */ }
+  showLogin('You have been logged out.');
+}
+
+/** data: already sent along with the login, so no second trip to the server is needed */
+function startApp(data) {
+  $('loginView').classList.add('hidden');
+  $('loading').classList.remove('hidden');
+  $('loading').textContent = 'Loading…';
+  load(data);
+}
+
+function applyRole() {
+  $('userName').textContent = (D.user.name || D.user.username) + ' (' + D.user.role + ')';
+  document.querySelectorAll('.viewer-hide').forEach(el => el.classList.toggle('hidden', !canEdit()));
+  document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin()));
+  $('uShared').classList.toggle('hidden', !D.usersShared);
+}
+
+/* ======================== LOAD ======================== */
+async function load(preloaded) {
+  try {
+    const data = preloaded || await call('getData', year || '');
+    index(data);
+    if (!booted) {
+      booted = true;
+      $('loading').classList.add('hidden');
+      $('mainNav').classList.remove('hidden'); $('userBox').classList.remove('hidden');
+      document.querySelectorAll('select.docst').forEach(s => {
+        s.innerHTML = '<option value="">— status —</option>' + D.docStatus.map(x => '<option>' + esc(x) + '</option>').join('');
+      });
+      $('fTypes').innerHTML = D.procTypes.map(t => '<label class="choice"><input type="radio" name="fType" value="' + esc(t) + '"> ' + esc(TYPE_LABEL[t] || t) + '</label>').join('');
+      document.querySelectorAll('input[name=fType]').forEach(el => el.addEventListener('change', updateForm));
+      $('lType').innerHTML = '<option value="">All kinds</option>' + D.procTypes.map(t => '<option>' + esc(t) + '</option>').join('');
+      $('rtAction').innerHTML = D.routeActions.map(a => '<option>' + esc(a) + '</option>').join('');
+      $('fRepeatChoices').innerHTML = D.repeatTypes.map(t => '<label class="choice block"><input type="radio" name="fRep" value="' + esc(t) + '">' +
+        '<span><b>' + esc(REPEAT_LABEL[t][0]) + '</b> – ' + esc(REPEAT_LABEL[t][1]) + '</span></label>').join('');
+      applyRole(); resetForm(); resetPRForm(); show('dashboard');
+    }
+    renderAll();
+  } catch (e) {
+    if (!TOKEN) return; // already sent back to login
+    if (booted) toast(e.message || e);
+    else $('loading').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>';
+  }
+}
+async function refresh() { await load(); toast('Updated with the latest data'); }
+
+/**
+ * Short form of a record from another year (see liteRow_ in Code.gs): enough for the repeat check,
+ * the Repeated page and finding a record by DTS. Opening one fetches its full details (fullRecord).
+ */
+function expandLite(a) {
+  return { id: a[0], received: a[1], office: a[2], title: a[3], status: a[4], repeatType: a[5], repeatOf: a[6],
+    start: a[7], end: a[8], procType: a[9], dts: a[10], lite: true,
+    prs: a[11].map(x => ({ id: x[0], dts: x[1], status: x[2] === 'C' ? 'Cancelled' : 'Active', title: x[3], amount: 0, items: [], lite: true })),
+    routing: [], proposalType: 'None', withATC: false, preparedBy: '', venue: '', amount: 0, proposalStatus: '', atcStatus: '',
+    logbook: '', cancel: null, repeatNote: '', remarks: '', source: '', by: '', at: '', updatedBy: '', details: '' };
+}
+
+/* The server leaves out empty values to keep the download small (slim_ in Code.gs); fill() puts them back. */
+const REC_BLANK = { received: '', office: '', preparedBy: '', proposalType: 'None', withATC: false, procType: '', title: '', details: '', venue: '', start: '', end: '',
+  amount: 0, proposalStatus: '', atcStatus: '', dts: '', logbook: '', status: 'Active', cancel: null, repeatType: '', repeatOf: '', repeatNote: '',
+  remarks: '', source: '', by: '', at: '', updatedBy: '' };
+const PR_BLANK = { recordId: '', dts: '', received: '', prDate: '', requisitioner: '', title: '', venue: '', start: '', end: '', amount: 0, plan: '',
+  justification: '', facility: '', facilityJustification: '', prStatus: '', status: 'Active', cancel: null, replaces: '', remarks: '', source: '',
+  by: '', at: '', updatedBy: '' };
+const ROUTE_BLANK = { prId: '', when: '', action: '', person: '', remarks: '', by: '' };
+function fill(r) {
+  const put = (o, blank) => Object.keys(blank).forEach(k => { if (!(k in o)) o[k] = blank[k]; });
+  put(r, REC_BLANK);
+  r.prs = r.prs || []; r.routing = r.routing || [];
+  r.prs.forEach(p => { put(p, PR_BLANK); p.items = p.items || []; });
+  r.routing.forEach(x => put(x, ROUTE_BLANK));
+  return r;
+}
+
+/** Full details of a record; fetched from the server when only the short form is loaded. */
+async function fullRecord(id) {
+  const r = recById[id];
+  if (!r || !r.lite) return r;
+  toast('Loading ' + id + '…');
+  applyRecord(await call('getRecord', id));
+  return recById[id];
+}
+
+function index(data) {
+  D = data;
+  D.records.forEach(r => { if (!r.lite) fill(r); });
+  if (D.lite) { // the selected year comes in full; the other years in short form
+    const full = new Set(D.records.map(r => r.id));
+    D.records = D.records.concat(D.lite.filter(a => !full.has(a[0])).map(expandLite));
+    delete D.lite;
+  }
+  recById = {}; prById = {}; recTokens = {}; clusterCache = null; budgetOf = {};
+  D.records.forEach(r => {
+    recById[r.id] = r; recTokens[r.id] = textsOf(r).map(simTokens);
+    r.prs.forEach(p => { prById[p.id] = { p, r }; });
+  });
+  W = simWeights(D.records.map(r => [].concat.apply([], recTokens[r.id])));
+  (D.budgets || []).forEach(b => { budgetOf[b.office] = b; });
+
+  ['fOffice'].forEach(id => { const v = $(id).value; officeOptions($(id)); $(id).value = v; });
+  ['lOffice', 'rOffice'].forEach(id => { const v = $(id).value; officeOptions($(id), true); $(id).value = v; });
+  const opts = (id, list) => {
+    const names = {};
+    list.forEach(n => { if (n) names[n.toUpperCase()] = n; });
+    $(id).innerHTML = Object.values(names).sort().map(n => '<option value="' + esc(n) + '">').join('');
+  };
+  opts('byOpts', D.records.map(r => r.preparedBy));
+  opts('reqOpts', [].concat.apply([], D.records.map(r => [r.preparedBy].concat(r.prs.map(p => p.requisitioner)))));
+  opts('personOpts', [].concat.apply([], D.records.map(r => r.routing.map(x => x.person).concat(
+    [r.cancel && r.cancel.requestedBy], r.prs.map(p => p.cancel && p.cancel.requestedBy)))));
+
+  const thisYear = +D.today.slice(0, 4);
+  const years = new Set([thisYear, thisYear + 1]); // next year too, so its budgets can be entered early
+  D.records.forEach(r => { if (r.received) years.add(+r.received.slice(0, 4)); });
+  year = D.year || thisYear;
+  $('yearSel').innerHTML = Array.from(years).sort((a, b) => b - a)
+    .map(y => '<option' + (y === year ? ' selected' : '') + '>' + y + '</option>').join('');
+}
+// another year: get its full details from the server (the other years are already here in short form)
+$('yearSel').addEventListener('change', async () => {
+  year = +$('yearSel').value;
+  if (year === D.year) { renderAll(); return; }
+  toast('Loading ' + year + '…');
+  await load();
+});
+function inYear(r) { return (r.received || (/-(\d{4})-/.exec(r.id) || [0, ''])[1]).slice(0, 4) === String(year); } // a few imported rows have no date
+
+/** Put a saved record (and the new budget summary) into the local data instead of reloading everything. */
+function applyRecord(rec, budgets) {
+  const i = D.records.findIndex(r => r.id === rec.id);
+  if (i >= 0) D.records[i] = rec; else D.records.push(rec);
+  if (budgets) D.budgets = budgets;
+  index(D); renderAll();
+  if ($('viewModal').classList.contains('show') && vmId === rec.id) viewRecord(rec.id);
+}
+
+function renderAll() {
+  renderDashboard(); renderList();
+  if ($('budget').classList.contains('active')) renderBudget();
+  if ($('repeats').classList.contains('active')) renderRepeats();
+  if ($('users').classList.contains('active')) renderUsers();
+}
+
+/* ======================== NAV ======================== */
+function show(view) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === view));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  if (b.dataset.view === 'form' && form.id) resetForm();
+  if (b.dataset.view === 'prForm') resetPRForm();
+  if (b.dataset.view === 'users') renderUsers();
+  show(b.dataset.view);
+  if (b.dataset.view === 'repeats') renderRepeats();
+  if (b.dataset.view === 'budget') renderBudget();
+  if (b.dataset.view === 'prForm') $('pFind').focus();
+});
+
+/* ======================== DASHBOARD ======================== */
+/** "DTS … · PR DTS …, …" line of a record for the dashboard lists ("—" when there is no DTS yet). */
+function dtsLine(r) {
+  const prDts = activePRs(r).map(p => p.dts).filter(Boolean);
+  return '<div class="small muted">DTS ' + (r.dts ? esc(r.dts) : '—') + (prDts.length ? ' · PR DTS ' + prDts.map(esc).join(', ') : '') + '</div>';
+}
+function shortRow(r) {
+  return '<tr><td data-label="ID">' + idLink(r.id) + '<div class="small muted">' + fmt(r.received) + '</div></td>' +
+    '<td data-label="Office">' + esc(r.office) + '</td><td data-label="Title">' + esc(r.title) + typeTag(r) + ' ' + repeatPill(r) + dtsLine(r) + '</td>' +
+    '<td data-label="Documents">' + docPills(r) + '</td></tr>';
+}
+function renderDashboard() {
+  const recs = D.records.filter(inYear), active = recs.filter(r => r.status !== 'Cancelled');
+  const review = active.filter(hasReview);
+  const inc = [];
+  active.forEach(r => activePRs(r).forEach(p => { if (prState(p, r) !== 'Complete') inc.push({ p, r }); }));
+  $('stAll').textContent = active.length;
+  $('stReview').textContent = review.length;
+  $('stInc').textContent = inc.length;
+  $('stNoPr').textContent = active.filter(r => !activePRs(r).length).length;
+  $('stOver').textContent = (D.budgets || []).filter(b => b.budget != null && b.used > b.budget).length;
+  $('stCancel').textContent = recs.length - active.length;
+  const latest = list => list.slice().sort((a, b) => b.received.localeCompare(a.received) || b.id.localeCompare(a.id)).slice(0, 12);
+  $('dbReview').innerHTML = latest(review).map(shortRow).join('') || '<tr><td class="muted">None</td></tr>';
+  $('dbInc').innerHTML = inc.sort((a, b) => b.p.received.localeCompare(a.p.received)).slice(0, 15).map(x =>
+    '<tr><td data-label="ID">' + idLink(x.r.id) + '<div class="small muted">' + esc(x.r.office) + '</div>' +
+    '<div class="small muted">DTS ' + (x.r.dts ? esc(x.r.dts) : '—') + '</div></td>' +
+    '<td data-label="PR"><b>' + esc(x.p.id) + '</b> · ' + esc(x.p.title) +
+    '<div class="small">PR DTS: ' + (x.p.dts ? '<b>' + esc(x.p.dts) + '</b>' : '<span class="muted">—</span>') + '</div>' +
+    '<div class="small" style="color:var(--red)">Kulang: ' +
+    esc(prMissing(x.p, x.r).join(', ')) + '</div>' + stateLabel(x.p, x.r) + '</td></tr>').join('')
+    || '<tr><td class="muted">None 👍</td></tr>';
+}
+function goList(f) {
+  $('lQ').value = ''; $('lOffice').value = f.office || ''; $('lType').value = ''; $('lDoc').value = f.doc || '';
+  $('lStatus').value = f.status || 'Active'; $('lRep').checked = !!f.rep; listLimit = 200; renderList(); show('list');
+}
+
+/* ======================== STEP 1: PROCUREMENT FORM ======================== */
+function resetForm() {
+  form = { id: null, similar: [] };
+  document.querySelectorAll('.fReq').forEach(el => el.style.display = 'inline');
+  $('formTitle').textContent = 'New Procurement';
+  $('fInfo').innerHTML = ''; $('fMsg').innerHTML = '';
+  ['fBy', 'fDts', 'fLog', 'fTitle', 'fItem', 'fVenue', 'fStart', 'fEnd', 'fCStart', 'fCEnd', 'fAmount', 'fRemarks', 'fRepeatNote'].forEach(id => $(id).value = '');
+  $('fReceived').value = D ? D.today : '';
+  $('fOffice').value = '';
+  $('fWithATC').checked = true;
+  ['fPStatus', 'fAtcStatus'].forEach(id => $(id).value = 'For Review FPED');
+  setRadio('fType', null); setRadio('fPType', 'Activity Proposal'); setRadio('fRep', null);
+  $('fCancelRec').style.display = 'none';
+  updateForm(); checkSimilar();
+}
+
+async function editRecord(id) {
+  const r = await fullRecord(id).catch(e => toast(e.message || e));
+  if (!r) return;
+  closeModal('viewModal');
+  if (r.status === 'Cancelled') { toast(id + ' is cancelled. Restore it first before editing.'); return; }
+  resetForm();
+  form.id = id; form.imported = !!r.source;
+  // imported 2026 records often have no prepared by / DTS / G#, so these stay optional for them (same as Code.gs)
+  document.querySelectorAll('.fReq').forEach(el => el.style.display = r.source ? 'none' : 'inline');
+  $('formTitle').textContent = 'Edit ' + id;
+  $('fReceived').value = r.received; $('fOffice').value = r.office; $('fBy').value = r.preparedBy;
+  $('fDts').value = r.dts; $('fLog').value = r.logbook; $('fTitle').value = r.title;
+  setRadio('fType', r.procType); setRadio('fPType', r.proposalType || 'None');
+  $('fPStatus').value = r.proposalStatus || 'For Review FPED';
+  $('fWithATC').checked = r.withATC; $('fAtcStatus').value = r.atcStatus || 'For Review FPED';
+  if (isEvent(r)) { $('fVenue').value = r.venue; $('fStart').value = r.start; $('fEnd').value = r.end; }
+  else { $('fCStart').value = r.start; $('fCEnd').value = r.end; }
+  $('fAmount').value = r.amount || ''; $('fItem').value = r.details;
+  setRadio('fRep', r.repeatType || null); $('fRepeatNote').value = r.repeatNote; form.repeatOf = r.repeatOf;
+  $('fRemarks').value = r.remarks;
+  if (r.source) $('fInfo').innerHTML = '<div class="alert info">Galing sa 2026 file. Hula lang ang klase ng procurement (base sa title) — i-check. ' +
+    'Walang venue at petsa noong 2026; kailangang ilagay kung Event o Hiring.</div>';
+  $('fCancelRec').style.display = 'inline-block';
+  updateForm(); checkSimilar();
+  show('form');
+}
+
+/* ---------- show / hide parts of the form, and when Save can be clicked ---------- */
+function updateForm() {
+  const type = radio('fType'), ptype = radio('fPType');
+  $('fEventBox').style.display = type === 'Event' ? 'block' : 'none';
+  $('fHireBox').style.display = type === 'Hiring of Personnel' ? 'block' : 'none';
+  const item = ITEM_LABEL[type];
+  $('fItemBox').style.display = item ? 'block' : 'none';
+  if (item) { $('fItemLabel').textContent = item[0]; $('fItem').placeholder = item[1]; $('fItemReq').style.display = item[2] ? 'inline' : 'none'; }
+  $('fCLen').textContent = contractLength($('fCStart').value, $('fCEnd').value);
+  $('fPStatusBox').style.display = ptype && ptype !== 'None' ? 'grid' : 'none';
+  $('fPTypeName').textContent = ptype || '';
+  $('fAtcStatus').disabled = !$('fWithATC').checked;
+  $('fAmtReq').style.display = (ptype && ptype !== 'None') || $('fWithATC').checked ? 'inline' : 'none';
+
+  const mustAnswer = form.similar.some(s => s.office === $('fOffice').value);
+  $('fRepeatCard').style.display = mustAnswer || radio('fRep') ? 'block' : 'none';
+  const rep = radio('fRep');
+  $('fRepeatOfBox').style.display = rep && rep !== 'Different' ? 'grid' : 'none';
+
+  let hint = '';
+  if (!type) hint = 'Piliin kung anong klaseng procurement.';
+  else if (!ptype) hint = 'Piliin ang proposal.';
+  else if (mustAnswer && !rep) hint = 'Sagutin muna kung repeat ba ito.';
+  $('fSave').disabled = !!hint;
+  $('fSaveHint').textContent = hint;
+}
+document.querySelectorAll('input[name=fPType]').forEach(el => el.addEventListener('change', updateForm));
+['fWithATC', 'fCStart', 'fCEnd'].forEach(id => $(id).addEventListener('change', updateForm));
+$('fStart').addEventListener('change', () => { if (!$('fEnd').value || $('fEnd').value < $('fStart').value) $('fEnd').value = $('fStart').value; });
+$('fRepeatChoices').addEventListener('change', updateForm);
+$('fOffice').addEventListener('change', checkSimilar);
+
+/* ---------- look-alike check while typing ---------- */
+let simTimer = null;
+function checkSimilarSoon() { clearTimeout(simTimer); simTimer = setTimeout(checkSimilar, 300); }
+$('fTitle').addEventListener('input', checkSimilarSoon);
+
+function checkSimilar() {
+  if (!D) return;
+  form.similar = findSimilar($('fTitle').value, form.id, $('fOffice').value);
+  renderSimilar();
+  updateForm();
+}
+
+function simItem(s, mine) {
+  const r = recById[s.id] || { prs: [] };
+  return '<li' + (mine ? '' : ' class="other"') + '>' + idLink(s.id) + ' · <b>' + esc(s.title) + '</b>' + typeTag(r) +
+    (s.matched !== s.title ? '<div class="small">PR: ' + esc(s.matched) + '</div>' : '') +
+    '<div class="small muted">' + esc(s.office) + ' · received ' + fmt(s.received) + (whenWhere(r) ? ' · ' + whenWhere(r) : '') + ' · ' + s.score + '% alike</div>' +
+    '<div>' + (s.status === 'Cancelled' ? '<span class="pill Cancelled">Cancelled</span>' : '') + docPills(r) + ' ' + repeatPill(r) + '</div></li>';
+}
+
+function renderSimilar() {
+  const office = $('fOffice').value;
+  const mine = form.similar.filter(s => s.office === office), other = form.similar.filter(s => s.office !== office);
+  let html = '';
+  if (mine.length) {
+    const cancelled = mine.filter(s => s.status === 'Cancelled').length;
+    html += '<div class="alert warn"><b>⚠ May ' + mine.length + ' kahawig na activity na ang ' + esc(office) + '</b>' +
+      (cancelled ? ' (' + cancelled + ' dito ay cancelled)' : '') +
+      '<div class="small">Kung PR lang ang idadagdag sa activity na naipasa na, buksan ang record at pindutin ang <b>+ Add PR</b> (o gamitin ang <b>+ PR</b> sa itaas).</div>' +
+      '<ul class="sim">' + mine.map(s => simItem(s, true)).join('') + '</ul></div>';
+  }
+  if (other.length) {
+    html += '<details class="small"><summary>' + other.length + ' kahawig sa ibang office' + (office ? '' : ' (pumili ng office sa itaas)') +
+      '</summary><ul class="sim">' + other.map(s => simItem(s, false)).join('') + '</ul></details>';
+  }
+  $('fSimilar').innerHTML = html;
+
+  // "Which one?" list: same office first
+  const keep = $('fRepeatOf').value || form.repeatOf;
+  const opts = mine.concat(other);
+  if (keep && !opts.some(s => s.id === keep) && recById[keep]) opts.unshift({ id: keep, title: recById[keep].title, office: recById[keep].office });
+  $('fRepeatOf').innerHTML = opts.map(s => '<option value="' + esc(s.id) + '">' + esc(s.id + ' · ' + s.office + ' · ' + s.title.slice(0, 70)) + '</option>').join('');
+  if (keep) $('fRepeatOf').value = keep;
+}
+
+/* ---------- save ---------- */
+function formData() {
+  const type = radio('fType'), hire = type === 'Hiring of Personnel';
+  return {
+    id: form.id, received: $('fReceived').value, office: $('fOffice').value, preparedBy: $('fBy').value, dts: $('fDts').value,
+    logbook: $('fLog').value, title: $('fTitle').value, procType: type, proposalType: radio('fPType'),
+    details: ITEM_LABEL[type] ? $('fItem').value : '',
+    proposalStatus: $('fPStatus').value, withATC: $('fWithATC').checked, atcStatus: $('fAtcStatus').value,
+    venue: $('fVenue').value, start: hire ? $('fCStart').value : $('fStart').value,
+    end: hire ? $('fCEnd').value : ($('fEnd').value || $('fStart').value), amount: $('fAmount').value,
+    repeatType: radio('fRep') || '', repeatOf: $('fRepeatOf').value, repeatNote: $('fRepeatNote').value, remarks: $('fRemarks').value,
+  };
+}
+
+function checkForm(p) {
+  if (!p.received) return 'Date received is required.';
+  if (!p.office) return 'Choose the office.';
+  if (!form.imported) {
+    if (!p.preparedBy.trim()) return 'Ilagay kung sino ang nag-prepare (Prepared by).';
+    if (!p.dts.trim()) return 'Ilagay ang DTS No.';
+    if (!p.logbook.trim()) return 'Ilagay ang Logbook No. (G#).';
+  }
+  if (!p.title.trim()) return 'Enter the title.';
+  const hasProp = p.proposalType !== 'None';
+  if (hasProp && !p.proposalStatus) return 'Choose the status of the ' + p.proposalType + '.';
+  if (p.withATC && !p.atcStatus) return 'Choose the status of the Authority to Conduct.';
+  if ((hasProp || p.withATC) && !(Number(p.amount) > 0)) return 'Amount is required.';
+  if (p.procType === 'Event') {
+    if (!p.venue.trim()) return 'Venue of the event is required.';
+    if (!p.start) return 'Date of the event is required.';
+    if (p.end < p.start) return 'The end date is earlier than the start.';
+  }
+  if (ITEM_LABEL[p.procType] && ITEM_LABEL[p.procType][2] && !p.details.trim()) {
+    return p.procType === 'Repair' ? 'Ilagay kung ano ang ire-repair.' : 'Ilagay kung anong equipment.';
+  }
+  if (p.procType === 'Hiring of Personnel') {
+    if (!p.start || !p.end) return 'Duration of the contract (start and end) is required.';
+    if (p.end < p.start) return 'The end of the contract is earlier than the start.';
+  }
+  return '';
+}
+
+$('fSave').onclick = async () => {
+  const p = formData();
+  const err = checkForm(p);
+  if (err) { $('fMsg').innerHTML = '<div class="alert bad">' + esc(err) + '</div>'; return; }
+  $('fSave').disabled = true; $('fMsg').innerHTML = '';
+  try {
+    const res = await call('saveProposal', p);
+    if (!res.ok) {
+      // someone saved a look-alike record after this page was loaded
+      await load();
+      form.similar = res.similar; renderSimilar(); updateForm();
+      $('fMsg').innerHTML = '<div class="alert warn">May bagong kahawig na record. Sagutin muna kung repeat ba ito.</div>';
+      scrollToEl($('fRepeatCard'));
+      return;
+    }
+    applyRecord(res.record);
+    toast((p.id ? 'Updated ' : 'Saved ') + res.record.id);
+    resetForm();
+    viewRecord(res.record.id);
+  } catch (e) {
+    $('fMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>';
+  } finally { updateForm(); }
+};
+
+/* ======================== STEP 2 + 3: PURCHASE REQUEST FORM ======================== */
+function resetPRForm() {
+  prf = { id: null, recordId: null, items: [] };
+  $('pTitleH').textContent = 'New Purchase Request';
+  $('pFind').value = ''; $('pFindList').innerHTML = '';
+  $('pFindCard').style.display = 'block'; $('pMain').style.display = 'none';
+}
+
+/** Search for the record a new PR belongs to (all years): DTS of the proposal or a PR, title, office, ID. */
+function renderFind() {
+  const q = $('pFind').value.trim().toUpperCase();
+  if (q.length < 2) { $('pFindList').innerHTML = ''; return; }
+  const words = q.split(/\s+/);
+  const hits = D.records.filter(r => {
+    const hay = [r.id, r.title, r.details, r.office, r.dts, r.logbook].concat(r.prs.map(p => p.dts + ' ' + p.title)).join(' ').toUpperCase();
+    return words.every(w => hay.indexOf(w) >= 0);
+  }).sort((a, b) => (a.status === 'Cancelled') - (b.status === 'Cancelled') || b.received.localeCompare(a.received)).slice(0, 15);
+  $('pFindList').innerHTML = hits.map(r => '<li class="pick" onclick="pickRecord(\'' + r.id + '\')"><b>' + esc(r.id) + '</b> · ' + esc(r.title) + typeTag(r) +
+    '<div class="small muted">' + esc(r.office) + ' · received ' + fmt(r.received) + (r.dts ? ' · DTS ' + esc(r.dts) : '') + (whenWhere(r) ? ' · ' + whenWhere(r) : '') + '</div>' +
+    '<div>' + (r.status === 'Cancelled' ? '<span class="pill Cancelled">Cancelled</span>' : '') + docPills(r) + '</div></li>').join('')
+    || '<li class="muted">Walang nahanap.</li>';
+}
+$('pFind').addEventListener('input', () => { clearTimeout(renderFind._t); renderFind._t = setTimeout(renderFind, 200); });
+
+async function pickRecord(id) {
+  const r = await fullRecord(id).catch(e => toast(e.message || e));
+  if (!r) return;
+  if (r.status === 'Cancelled') { toast(id + ' is cancelled. Restore it first.'); return; }
+  openPRForm(id, null);
+}
+
+/** Opens the PR form for a new PR (prId null) or an existing PR of a record. */
+async function openPRForm(recordId, prId) {
+  const r = await fullRecord(recordId).catch(e => toast(e.message || e));
+  if (!r) return;
+  closeModal('viewModal');
+  const p = prId ? r.prs.find(x => x.id === prId) : null;
+  prf = { id: prId || null, recordId };
+  $('pTitleH').textContent = p ? 'Edit PR ' + (p.dts || p.id) : 'New Purchase Request';
+  $('pFindCard').style.display = 'none'; $('pMain').style.display = 'block'; $('pMsg').innerHTML = '';
+  $('pRecCard').innerHTML = '<div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap"><div>' +
+    '<div class="muted small">PARA SA</div><b>' + esc(r.id) + '</b> · ' + esc(r.title) + typeTag(r) +
+    '<div class="small muted">' + esc(r.office) + ' · received ' + fmt(r.received) + (r.dts ? ' · DTS ' + esc(r.dts) : '') +
+    (whenWhere(r) ? ' · ' + whenWhere(r) : '') + (r.amount ? ' · ₱' + money(r.amount) : '') + '</div>' +
+    '<div>' + docPills(r) + '</div></div>' +
+    (p ? '' : '<button class="btn small" onclick="resetPRForm()">Palitan</button>') + '</div>';
+
+  // a new PR starts with the details of the proposal
+  const v = (k, def) => p ? p[k] : def;
+  $('pDts').value = v('dts', ''); $('pReceived').value = v('received', D.today); $('pDate').value = v('prDate', '');
+  $('pReq').value = v('requisitioner', r.preparedBy); $('pTitle').value = v('title', r.title);
+  $('pVenue').value = v('venue', r.venue); $('pStart').value = v('start', r.start); $('pEnd').value = v('end', r.end);
+  $('pAmount').value = v('amount', activePRs(r).length ? '' : (r.amount || '')) || '';
+  $('pStatus').value = v('prStatus', 'For Review FPED') || 'For Review FPED';
+  setRadio('pPlan', p ? p.plan : null); $('pJust').value = v('justification', '');
+  setRadio('pFac', p ? p.facility || null : null); $('pFacJust').value = v('facilityJustification', '');
+  $('pRemarks').value = v('remarks', '');
+  $('pEventBox').style.display = isEvent(r) ? 'grid' : 'none';
+  $('pFacBox').style.display = isEvent(r) ? 'block' : 'none';
+
+  // cancelled PRs this one can replace: same record first, then the same office
+  const cands = [];
+  D.records.forEach(x => x.prs.forEach(c => {
+    if (c.status === 'Cancelled' && c.id !== prf.id && (x.id === r.id || x.office === r.office)) cands.push({ c, x });
+  }));
+  cands.sort((a, b) => (b.x.id === r.id) - (a.x.id === r.id) || b.c.id.localeCompare(a.c.id));
+  $('pReplaces').innerHTML = '<option value="">— wala, bagong PR —</option>' + cands.map(o => '<option value="' + esc(o.c.id) + '">' +
+    esc((o.c.dts ? 'DTS ' + o.c.dts : o.c.id) + ' · ' + o.c.title.slice(0, 60) + (o.x.id === r.id ? ' (this record)' : ' · ' + o.x.id)) + '</option>').join('');
+  $('pReplaces').value = p ? p.replaces : (cands.length && cands[0].x.id === r.id && !activePRs(r).length ? cands[0].c.id : '');
+  updatePR();
+  show('prForm');
+}
+
+function prFormData() {
+  const r = recById[prf.recordId];
+  return {
+    id: prf.id, recordId: prf.recordId, dts: $('pDts').value, received: $('pReceived').value, prDate: $('pDate').value,
+    requisitioner: $('pReq').value, title: $('pTitle').value, venue: $('pVenue').value, start: $('pStart').value,
+    end: $('pEnd').value || $('pStart').value, amount: $('pAmount').value, prStatus: $('pStatus').value,
+    plan: radio('pPlan') || '', justification: $('pJust').value, facility: isEvent(r) ? radio('pFac') || '' : '',
+    facilityJustification: $('pFacJust').value, replaces: $('pReplaces').value, remarks: $('pRemarks').value,
+  };
+}
+
+/** Shows the parts that apply, the attachment checklist and the budget left. */
+function updatePR() {
+  if (!prf.recordId) return;
+  const r = recById[prf.recordId], p = prFormData();
+  $('pJustBox').style.display = p.plan === 'SPPMP' ? 'block' : 'none';
+  $('pFacJustBox').style.display = p.facility === 'Non-Government' ? 'block' : 'none';
+  const missing = prMissing(p, r);
+  $('pCheck').innerHTML = missing.length
+    ? '<div class="alert bad"><b>Kulang ang attachments – ibalik sa ' + esc(r.office) + '</b><ul>' + missing.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' +
+      '<div class="small">Puwede pa ring i-save; lalabas ito bilang <b>Incomplete – return to office</b>. Pagkabalik sa office, i-record sa Routing: <b>Returned to office</b>.</div></div>'
+    : '<div class="alert ok">✔ Kumpleto ang attachments.</div>';
+
+  // budget of the office for the year of the PR
+  const prYear = +(p.received || D.today).slice(0, 4), amt = Number(p.amount) || 0;
+  let html = '';
+  if (prYear !== D.year) {
+    html = '<div class="budgetbox">Budget ng ' + esc(r.office) + ' ' + prYear + ': makikita pagka-save (piliin ang ' + prYear + ' sa itaas para makita ngayon).</div>';
+  } else {
+    const b = budgetOf[r.office];
+    const old = prf.id && prById[prf.id] && prById[prf.id].p.status !== 'Cancelled' && (prById[prf.id].p.received || '').slice(0, 4) === String(D.year) ? prById[prf.id].p.amount : 0;
+    if (!b || b.budget == null) {
+      html = '<div class="budgetbox">Wala pang budget ang ' + esc(r.office) + ' para sa ' + prYear + '. <span class="link" onclick="openBudget(\'' + esc(r.office) + '\')">Ilagay ang budget</span></div>';
+    } else {
+      const usedOthers = b.used - old, after = b.budget - usedOthers - amt;
+      html = '<div class="budgetbox' + (after < 0 ? ' over' : '') + '">Budget ng <b>' + esc(r.office) + '</b> ' + prYear + ': ₱' + money(b.budget) +
+        ' · Nagamit (ibang PR): ' + peso(usedOthers) + ' · Natitira: ' + peso(b.budget - usedOthers) +
+        '<br><b>Matitira pagkatapos ng PR na ito: ' + peso(after) + '</b>' + (after < 0 ? ' — ⚠ LAMPAS SA BUDGET (puwede pa ring i-save)' : '') + '</div>';
+    }
+  }
+  $('pBudget').innerHTML = html;
+
+  // the same PR DTS used twice is most likely a typing mistake
+  const dts = p.dts.trim().toUpperCase();
+  const dup = dts && Object.values(prById).find(x => x.p.id !== prf.id && x.p.status !== 'Cancelled' && String(x.p.dts).toUpperCase() === dts);
+  $('pDtsWarn').innerHTML = dup ? '<div class="alert warn small">Ginamit na ang DTS na ito sa PR ng ' + idLink(dup.r.id) + ' (' + esc(dup.p.title) + ').</div>' : '';
+}
+['pReceived', 'pAmount', 'pDts', 'pJust', 'pFacJust'].forEach(id => $(id).addEventListener('input', updatePR));
+document.querySelectorAll('input[name=pPlan], input[name=pFac]').forEach(el => el.addEventListener('change', updatePR));
+$('pStart').addEventListener('change', () => { if (!$('pEnd').value || $('pEnd').value < $('pStart').value) $('pEnd').value = $('pStart').value; });
+
+function checkPR(p) {
+  const r = recById[p.recordId];
+  if (!p.received) return 'Date received of the PR is required.';
+  if (!p.title.trim()) return 'Enter the title.';
+  if (!(Number(p.amount) > 0)) return 'Amount of the PR is required.';
+  if (!p.prStatus) return 'Choose the PR status.';
+  if (isEvent(r) && (!p.venue.trim() || !p.start)) return 'Venue and date of the event are required.';
+  if (p.start && p.end < p.start) return 'The end date is earlier than the start.';
+  return '';
+}
+
+/* ======================== STEP 3: SPPMP (after the papers come back from the office) ======================== */
+let sp = { prId: null, items: [] };
+function openSppmp(prId) {
+  const x = prById[prId];
+  sp = { prId, items: x.p.items.length ? x.p.items.map(it => Object.assign({}, it)) : [{ item: '', amount: '' }] };
+  $('spTitle').textContent = 'SPPMP — PR ' + (x.p.dts || x.p.id);
+  $('spInfo').textContent = x.p.title + ' · ' + x.r.office + ' · PR amount ₱' + money(x.p.amount);
+  $('spJust').value = x.p.justification; $('spMsg').innerHTML = '';
+  renderItems();
+  $('sppmpModal').classList.add('show');
+}
+function renderItems() {
+  $('spItems').innerHTML = sp.items.map((it, i) => '<tr>' +
+    '<td data-label="Item"><input data-i="' + i + '" data-k="item" value="' + esc(it.item) + '" placeholder="e.g. Meals for 40 participants"></td>' +
+    '<td data-label="Amount" class="num"><input type="number" min="0" step="0.01" data-i="' + i + '" data-k="amount" value="' + esc(it.amount) + '" style="text-align:right"></td>' +
+    '<td class="actions"><button class="btn small" onclick="removeItem(' + i + ')" title="Remove item">✕</button></td></tr>').join('');
+  spTotal();
+}
+function spTotal() {
+  const tot = sp.items.reduce((s, it) => s + (Number(it.amount) || 0), 0), amt = prById[sp.prId].p.amount;
+  $('spTotal').textContent = money(tot);
+  $('spDiff').textContent = tot && Math.abs(tot - amt) > 0.005 ? '(PR amount: ' + money(amt) + ')' : '';
+}
+function addItem() {
+  sp.items.push({ item: '', amount: '' });
+  renderItems();
+  const inputs = $('spItems').querySelectorAll('input[data-k=item]');
+  inputs[inputs.length - 1].focus();
+}
+function removeItem(i) { sp.items.splice(i, 1); renderItems(); }
+$('spItems').addEventListener('input', e => {
+  const el = e.target, i = +el.dataset.i;
+  if (!sp.items[i]) return;
+  sp.items[i][el.dataset.k] = el.value;
+  spTotal();
+});
+$('spSave').onclick = async () => {
+  const items = sp.items.filter(it => String(it.item).trim() || it.amount);
+  const bad = items.findIndex(it => !String(it.item).trim() || !(Number(it.amount) > 0));
+  const msg = m => { $('spMsg').innerHTML = '<div class="alert bad">' + esc(m) + '</div>'; };
+  if (!items.length) return msg('Add at least one SPPMP item.');
+  if (bad >= 0) return msg('SPPMP item ' + (bad + 1) + ': description and amount are both required.');
+  $('spSave').disabled = true;
+  try {
+    const res = await call('saveSppmp', sp.prId, { justification: $('spJust').value, items });
+    closeModal('sppmpModal');
+    applyRecord(res.record);
+    toast('SPPMP saved');
+  } catch (e) { msg(e.message || e); }
+  finally { $('spSave').disabled = false; }
+};
+
+$('pSave').onclick = async () => {
+  const p = prFormData();
+  const err = checkPR(p);
+  if (err) { $('pMsg').innerHTML = '<div class="alert bad">' + esc(err) + '</div>'; return; }
+  $('pSave').disabled = true; $('pMsg').innerHTML = '';
+  try {
+    const res = await call('savePR', p, D.year);
+    applyRecord(res.record, res.budgets);
+    const b = res.budget;
+    const left = b.budget == null ? '' : ' · ' + b.office + ' ' + b.year + ' natitira: ' + peso(b.budget - b.used) + (b.used > b.budget ? ' (LAMPAS!)' : '');
+    toast((p.id ? 'PR updated' : 'PR saved') + left);
+    resetPRForm();
+    viewRecord(p.recordId);
+  } catch (e) {
+    $('pMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>';
+  } finally { $('pSave').disabled = false; }
+};
+
+/* ======================== LIST ======================== */
+function matchesDoc(r, f) {
+  switch (f) {
+    case 'review': return hasReview(r);
+    case 'noPR': return !activePRs(r).length;
+    case 'withPR': return activePRs(r).length > 0;
+    case 'incomplete': return hasIncomplete(r);
+    case 'sppmp': return activePRs(r).some(p => p.plan === 'SPPMP');
+    case 'nongov': return activePRs(r).some(p => p.facility === 'Non-Government');
+    case 'cancelledPR': return r.prs.some(p => p.status === 'Cancelled');
+    default: return true;
+  }
+}
+function renderList() {
+  const q = $('lQ').value.trim().toUpperCase(), office = $('lOffice').value, type = $('lType').value, doc = $('lDoc').value,
+    status = $('lStatus').value, rep = $('lRep').checked;
+  const rows = D.records.filter(r => inYear(r) && (!office || r.office === office) && (!type || r.procType === type) && matchesDoc(r, doc) &&
+    (!status || (r.status || 'Active') === status) && (!rep || isRepeat(r)) &&
+    (!q || [r.id, r.title, r.details, r.office, r.preparedBy, r.dts, r.logbook, r.venue].concat(r.prs.map(p => [p.id, p.dts, p.title, p.requisitioner].join(' '))).join(' ').toUpperCase().indexOf(q) >= 0))
+    .sort((a, b) => b.received.localeCompare(a.received) || b.id.localeCompare(a.id));
+  $('lCount').textContent = rows.length + ' record(s)';
+  $('lBody').innerHTML = rows.slice(0, listLimit).map(r => {
+    const pr = prTotal(r), prDts = r.prs.filter(p => p.dts).map(p => (p.status === 'Cancelled' ? '<s>' + esc(p.dts) + '</s>' : esc(p.dts)));
+    return '<tr' + (r.status === 'Cancelled' ? ' class="cancelled"' : '') + '>' +
+      '<td style="white-space:nowrap">' + idLink(r.id) + '<div class="small muted">' + fmt(r.received) + '</div></td>' +
+      '<td>' + esc(r.office) + '<div class="small muted">' + esc(r.preparedBy) + '</div></td>' +
+      '<td><span class="ttl">' + esc(r.title) + '</span>' + typeTag(r) +
+      (whenWhere(r) ? '<div class="small muted">' + whenWhere(r) + '</div>' : '') +
+      '<div>' + (r.status === 'Cancelled' ? '<span class="pill Cancelled">Cancelled</span>' : '') + repeatPill(r) + '</div></td>' +
+      '<td>' + docPills(r) + '</td>' +
+      '<td class="num">' + (r.amount ? money(r.amount) : '') + (pr ? '<div class="small muted">PR ' + money(pr) + '</div>' : '') + '</td>' +
+      '<td class="small">' + esc(r.dts) + (prDts.length ? '<div>PR: ' + prDts.join(', ') + '</div>' : '') + (r.logbook ? '<div class="muted">' + esc(r.logbook) + '</div>' : '') + '</td>' +
+      '<td class="actions" style="white-space:nowrap">' + actionButtons(r) + '</td></tr>';
+  }).join('') || '<tr><td colspan="7" class="muted">No records found.</td></tr>';
+  $('lMore').style.display = rows.length > listLimit ? 'inline-block' : 'none';
+}
+function actionButtons(r) {
+  const view = '<button class="btn small" onclick="viewRecord(\'' + r.id + '\')">View</button> ';
+  if (!canEdit()) return view;
+  return r.status === 'Cancelled'
+    ? view + '<button class="btn small" onclick="askStatus(\'record\', \'' + r.id + '\', \'Active\')">Restore</button>'
+    : view + '<button class="btn small" onclick="openPRForm(\'' + r.id + '\', null)">+ PR</button>';
+}
+['lQ', 'lOffice', 'lType', 'lDoc', 'lStatus', 'lRep'].forEach(id => $(id).addEventListener('input', () => { listLimit = 200; renderList(); }));
+$('lMore').onclick = () => { listLimit += 200; renderList(); };
+
+/* ======================== VIEW RECORD (all 4 steps) ======================== */
+let vmId = null;
+const kv = (k, v) => v ? '<dt>' + k + '</dt><dd>' + v + '</dd>' : '';
+function docRow(name, s) { return '<span class="pill ' + statusClass(s) + '">' + esc(name) + ' · ' + esc(s || '—') + '</span>'; }
+function cancelInfo(c) {
+  return c ? '<div class="alert bad small"><b>Cancelled ' + esc(fmtDT(c.at)) + '</b> · sinabi ni <b>' + esc(c.requestedBy) + '</b> · ' + esc(c.reason) +
+    ' <span class="muted">(encoded by ' + esc(c.by) + ')</span></div>' : '';
+}
+
+/** Step 3 of a PR: the SPPMP items, or the button to add them. Not needed when the PR has a PPMP. */
+function sppmpPart(p, r, edit) {
+  const h = btn => '<h3 style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="step">3</span> SPPMP' + btn + '</h3>';
+  if (!p.items.length) {
+    if (p.plan === 'PPMP') return h('') + '<p class="muted small" style="margin:0">May PPMP — hindi kailangan ng SPPMP. (Kung SPPMP pala, i-Edit PR at piliin ang SPPMP.)</p>';
+    return h(edit ? '<button class="btn small primary" style="margin-left:auto" onclick="openSppmp(\'' + p.id + '\')">+ Ilagay ang SPPMP</button>' : '') +
+      '<p class="muted small" style="margin:0">Wala pang SPPMP. Ilagay ito pagbalik ng papel galing sa ' + esc(r.office) + '.</p>';
+  }
+  const tot = p.items.reduce((s, it) => s + it.amount, 0);
+  return h(edit ? '<button class="btn small" style="margin-left:auto" onclick="openSppmp(\'' + p.id + '\')">Edit SPPMP</button>' : '') +
+    '<div class="card flush"><table class="stack"><thead><tr><th>#</th><th>Activity / Item / Description</th><th class="num">Amount</th></tr></thead><tbody>' +
+    p.items.map((it, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(it.item) + '</td><td class="num">' + money(it.amount) + '</td></tr>').join('') +
+    '<tr class="total"><td></td><td>Total</td><td class="num">' + money(tot) + '</td></tr></tbody></table></div>';
+}
+
+function prCard(p, r) {
+  const missing = prMissing(p, r), cancelled = p.status === 'Cancelled', edit = canEdit() && r.status !== 'Cancelled';
+  const replacedBy = Object.values(prById).filter(x => x.p.replaces === p.id);
+  const prev = p.replaces && prById[p.replaces];
+  const fac = p.facility ? esc(p.facility) + (p.facility === 'Non-Government' ? '<div class="small">Justification: ' + (esc(p.facilityJustification) || '<span style="color:var(--red)">wala</span>') + '</div>' : '') : '';
+  const plan = p.plan ? esc(p.plan) + (p.plan === 'SPPMP' ? '<div class="small">Justification: ' + (esc(p.justification) || '<span style="color:var(--red)">wala</span>') + '</div>' : '') : '';
+  const other = x => x.r.id === r.id ? '' : ' · ' + idLink(x.r.id);
+  const details = '<dl class="kv">' +
+    kv('Title', '<b>' + esc(p.title) + '</b>') + kv('DTS No.', esc(p.dts)) + kv('Date received', fmt(p.received)) + kv('PR date', fmt(p.prDate)) +
+    kv('Requisitioner', esc(p.requisitioner)) + kv('Venue', esc(p.venue)) + kv('Date', range(p.start, p.end)) +
+    kv('Amount', '<b>₱' + money(p.amount) + '</b>') + kv('PPMP / SPPMP', plan || (p.source ? '' : '<span style="color:var(--red)">wala</span>')) + kv('Facility', fac) +
+    kv('Kapalit ng', prev ? esc(prev.p.title) + ' <span class="small muted">(cancelled' + (prev.p.cancel ? ' ' + esc(fmtDT(prev.p.cancel.at)) : '') + ')</span>' + other(prev) : '') +
+    kv('Pinalitan ng', replacedBy.map(x => esc(x.p.title) + (x.p.dts ? ' <span class="small muted">DTS ' + esc(x.p.dts) + '</span>' : '') + other(x)).join('<br>')) +
+    kv('Remarks', esc(p.remarks)) +
+    kv('Encoded', esc(p.by) + (p.at ? ' · ' + fmt(p.at) : '') + (p.updatedBy && p.updatedBy !== p.by ? ' · last edit by ' + esc(p.updatedBy) : '') + (p.source ? ' · ' + esc(p.source) : '') +
+      ' <span class="small muted">(' + esc(p.id) + ')</span>') +
+    '</dl>';
+
+  // a cancelled PR shows only its title; the rest is under "Details"
+  if (cancelled) {
+    return '<div class="prcard cancelled"><h4><span style="text-decoration:line-through">' + esc(p.title) + '</span><span class="pill Cancelled">Cancelled</span></h4>' +
+      '<details class="small"><summary>Details</summary>' + cancelInfo(p.cancel) + details + (p.items.length ? sppmpPart(p, r, false) : '') +
+      (edit ? '<div class="btns"><button class="btn small" onclick="askStatus(\'pr\', \'' + p.id + '\', \'Active\')">Restore PR</button></div>' : '') +
+      '</details></div>';
+  }
+
+  let html = '<div class="prcard' + (missing.length ? ' bad' : '') + '"><h4>PR' + (p.dts ? ' · DTS ' + esc(p.dts) : '') +
+    ' <span class="small muted">' + esc(p.id) + '</span> ' + docRow('PR', p.prStatus) +
+    (p.plan === 'SPPMP' ? '<span class="pill sppmp">SPPMP</span>' : '') + stateLabel(p, r) + '</h4>' +
+    (missing.length ? '<div class="alert bad small"><b>Kulang:</b> ' + esc(missing.join(', ')) + '</div>' : '') + details;
+  if (edit) {
+    html += '<div class="btns"><button class="btn small" onclick="openPRForm(\'' + r.id + '\', \'' + p.id + '\')">Edit PR</button>' +
+      (missing.length ? '<button class="btn small" onclick="openRoute(\'' + r.id + '\', \'' + p.id + '\', \'Returned to office\')">Returned to office</button>' : '') +
+      '<button class="btn small" onclick="openRoute(\'' + r.id + '\', \'' + p.id + '\')">+ Routing</button>' +
+      '<button class="btn small" onclick="askStatus(\'pr\', \'' + p.id + '\', \'Cancelled\')">Cancel PR</button></div>';
+  }
+  // step 3 comes later: the papers go back to the office and the SPPMP is encoded when they return
+  return html + sppmpPart(p, r, edit) + '</div>';
+}
+
+async function viewRecord(id) {
+  const r = await fullRecord(id).catch(e => toast(e.message || e));
+  if (!r) return;
+  vmId = id;
+  const edit = canEdit() && r.status !== 'Cancelled';
+  // only a cancelled record gets a status pill; the progress is shown by the documents below
+  $('vmTitle').innerHTML = esc(r.id) + typeTag(r) + (r.status === 'Cancelled' ? ' <span class="pill Cancelled">Cancelled</span>' : '');
+  const related = findSimilar(r.title, r.id, r.office);
+  const relatedHere = related.filter(s => s.office === r.office);
+  const linked = D.records.filter(x => x.repeatOf === r.id && isRepeat(x));
+  const when = isEvent(r) ? kv('Venue', esc(r.venue)) + kv('Date of event', range(r.start, r.end))
+    : r.procType === 'Hiring of Personnel' ? kv('Contract', range(r.start, r.end) + (r.start ? ' <span class="muted">(' + contractLength(r.start, r.end) + ')</span>' : '')) : '';
+
+  let html = cancelInfo(r.cancel) +
+    '<div class="vstep"><h3><span class="step">1</span> Proposal' + (edit ? '<button class="btn small" onclick="editRecord(\'' + r.id + '\')">Edit</button>' : '') + '</h3><dl class="kv">' +
+    kv('Title', '<b>' + esc(r.title) + '</b>') + kv('Klase', esc(r.procType)) +
+    kv(r.procType === 'Repair' ? 'Ire-repair' : r.procType === 'Equipment' ? 'Equipment' : 'Details', esc(r.details).replace(/\n/g, '<br>')) +
+    kv('Office', esc(r.office)) + kv('Prepared by', esc(r.preparedBy)) + kv('Date received', fmt(r.received)) +
+    kv('Documents', [hasProposal(r) ? docRow(r.proposalType, r.proposalStatus) : '<span class="muted">Walang proposal (PR lang)</span>',
+      r.withATC ? docRow('Authority to Conduct', r.atcStatus) : ''].filter(Boolean).join('<br>')) +
+    when + kv('Amount', r.amount ? '₱' + money(r.amount) : '') +
+    kv('DTS No.', esc(r.dts)) + kv('Logbook No.', esc(r.logbook)) +
+    kv('Repeat', r.repeatType ? esc(REPEAT_LABEL[r.repeatType][0]) + (r.repeatOf ? ' of ' + idLink(r.repeatOf) : '') + (r.repeatNote ? ' — ' + esc(r.repeatNote) : '') : '') +
+    kv('Remarks', esc(r.remarks)) +
+    kv('Encoded', esc(r.by) + (r.at ? ' · ' + fmt(r.at) : '') + (r.updatedBy && r.updatedBy !== r.by ? ' · last edit by ' + esc(r.updatedBy) : '') + (r.source ? ' · ' + esc(r.source) : '')) +
+    '</dl></div>';
+
+  const prs = r.prs.slice().sort((a, b) => (a.status === 'Cancelled') - (b.status === 'Cancelled') || a.id.localeCompare(b.id));
+  html += '<div class="vstep"><h3><span class="step">2</span> Purchase Request' + (prs.length > 1 ? 's (' + prs.length + ')' : '') +
+    (edit ? '<button class="btn small primary" onclick="openPRForm(\'' + r.id + '\', null)">+ Add PR</button>' : '') + '</h3>' +
+    (prs.length ? (prTotal(r) ? '<div class="small muted">Total ng PR (hindi kasama ang cancelled): <b>₱' + money(prTotal(r)) + '</b></div>' : '') + prs.map(p => prCard(p, r)).join('')
+      : '<p class="muted" style="margin:0">Wala pang PR.</p>') + '</div>';
+
+  const prName = pid => { const p = r.prs.find(x => x.id === pid); return p ? 'PR ' + (p.dts || p.id) : 'Proposal'; };
+  const routes = r.routing.slice().sort((a, b) => a.when.localeCompare(b.when));
+  html += '<div class="vstep"><h3><span class="step">4</span> Routing' + (edit ? '<button class="btn small" onclick="openRoute(\'' + r.id + '\', \'\')">+ Add entry</button>' : '') + '</h3>' +
+    (routes.length ? '<div class="card flush"><table class="stack"><thead><tr><th>Date &amp; time</th><th>Para sa</th><th>Nangyari</th><th>Kanino / sino</th><th>Remarks</th><th></th></tr></thead><tbody>' +
+      routes.map(x => '<tr><td style="white-space:nowrap">' + esc(fmtDT(x.when)) + '</td><td>' + esc(prName(x.prId)) + '</td><td>' +
+        (x.action === 'Returned to office' ? '<b style="color:var(--red)">' + esc(x.action) + '</b>' : esc(x.action)) + '</td><td><b>' + esc(x.person) + '</b></td>' +
+        '<td>' + esc(x.remarks) + ' <span class="small muted">(' + esc(x.by) + ')</span></td>' +
+        '<td class="actions">' + (canEdit() && (isAdmin() || x.by === D.user.username) ? '<button class="btn small" title="Remove (encoded by mistake)" onclick="removeRoute(\'' + x.id + '\')">✕</button>' : '') + '</td></tr>').join('') +
+      '</tbody></table></div>' : '<p class="muted" style="margin:0">Wala pang routing. Ilagay kung kanino ipinasa o sino ang nag-review, kasama ang petsa at oras.</p>') + '</div>';
+
+  if (linked.length) {
+    html += '<h3>Inulit / ipinasa ulit bilang</h3><ul class="sim">' + linked.map(x => '<li>' + idLink(x.id) + ' · ' + esc(x.title) +
+      ' <span class="small muted">' + fmt(x.received) + '</span> ' + repeatPill(x) + '</li>').join('') + '</ul>';
+  }
+  if (related.length) {
+    html += '<h3>Kahawig na records (' + relatedHere.length + ' sa ' + esc(r.office) + ', ' + (related.length - relatedHere.length) + ' sa ibang office)</h3>' +
+      '<ul class="sim">' + related.map(s => simItem(s, s.office === r.office)).join('') + '</ul>';
+  }
+  $('vmBody').innerHTML = html;
+  $('vmActions').innerHTML = (canEdit() ? (r.status === 'Cancelled'
+    ? '<button class="btn" onclick="askStatus(\'record\', \'' + r.id + '\', \'Active\')">Restore procurement</button>'
+    : '<button class="btn" onclick="askStatus(\'record\', \'' + r.id + '\', \'Cancelled\')">Cancel procurement</button>') : '') +
+    '<button class="btn primary" onclick="closeModal(\'viewModal\')">Close</button>';
+  $('viewModal').classList.add('show');
+}
+
+/* ======================== ROUTING (step 4) ======================== */
+let rtState = {};
+function openRoute(recordId, prId, action) {
+  const r = recById[recordId];
+  rtState = { recordId };
+  $('rtTitle').textContent = 'Routing — ' + recordId;
+  $('rtFor').innerHTML = '<option value="">Proposal / buong procurement</option>' + activePRs(r).map(p => '<option value="' + esc(p.id) + '">PR ' +
+    esc((p.dts || p.id) + ' · ' + p.title.slice(0, 50)) + '</option>').join('');
+  $('rtFor').value = prId || '';
+  $('rtAction').value = action || 'Forwarded for review';
+  ['rtPerson', 'rtRemarks'].forEach(id => $(id).value = '');
+  $('rtDate').value = D.today; $('rtTime').value = nowTime(); $('rtMsg').innerHTML = '';
+  routeLabel();
+  $('routeModal').classList.add('show');
+  $('rtPerson').focus();
+}
+function routeLabel() {
+  const a = $('rtAction').value;
+  $('rtPersonLabel').textContent = a === 'Returned to office' || a === 'Received back' ? 'Sino ang tumanggap / kausap sa office *'
+    : a === 'Forwarded for review' ? 'Kanino ipinasa *' : 'Sino *';
+}
+$('rtAction').addEventListener('change', routeLabel);
+$('rtSave').onclick = async () => {
+  const e = { recordId: rtState.recordId, prId: $('rtFor').value, action: $('rtAction').value, person: $('rtPerson').value.trim(),
+    date: $('rtDate').value, time: $('rtTime').value, remarks: $('rtRemarks').value };
+  if (!e.person) { $('rtMsg').innerHTML = '<div class="alert bad">Enter the name of the person.</div>'; return; }
+  if (!e.date || !e.time) { $('rtMsg').innerHTML = '<div class="alert bad">Enter the date and time.</div>'; return; }
+  $('rtSave').disabled = true;
+  try {
+    const res = await call('addRouting', e);
+    closeModal('routeModal');
+    applyRecord(res.record);
+    toast('Routing saved');
+  } catch (err) { $('rtMsg').innerHTML = '<div class="alert bad">' + esc(err.message || err) + '</div>'; }
+  finally { $('rtSave').disabled = false; }
+};
+async function removeRoute(entryId) {
+  if (!confirm('Tanggalin ang routing entry na ito?')) return;
+  try { const res = await call('deleteRouting', entryId); applyRecord(res.record); toast('Routing entry removed'); }
+  catch (e) { toast(e.message || e); }
+}
+
+/* ======================== CANCEL / RESTORE ======================== */
+/**
+ * For the Cancel button of the edit form. Inside an onclick="…" attribute, "form" means the
+ * button's own .form property (null), not the form variable, so it cannot be used there.
+ */
+function cancelFromForm() { if (form.id) askStatus('record', form.id, 'Cancelled'); }
+
+let smState = {};
+function askStatus(kind, id, status) {
+  const x = kind === 'pr' ? prById[id] : { r: recById[id] };
+  if (!x || !x.r) return;
+  smState = { kind, id, status };
+  const cancel = status === 'Cancelled', what = kind === 'pr' ? 'PR ' + (x.p.dts || id) : id;
+  $('smTitle').textContent = (cancel ? 'Cancel ' : 'Restore ') + what + '?';
+  $('smInfo').textContent = (kind === 'pr' ? x.p.title : x.r.title) + ' — ' + x.r.office +
+    (cancel && kind === 'record' && activePRs(x.r).length ? ' · Hindi na rin bibilangin sa budget ang ' + activePRs(x.r).length + ' PR nito.' : '') +
+    (cancel && kind === 'pr' ? ' · Ibabalik sa budget ang ₱' + money(x.p.amount) + '. Kung may bagong PR para dito, i-link ito sa PR na ito.' : '');
+  $('smCancelBox').style.display = cancel ? 'grid' : 'none';
+  $('smDate').value = D.today; $('smTime').value = nowTime(); $('smBy').value = '';
+  $('smReasonLabel').textContent = cancel ? 'Reason *' : 'Reason (optional)';
+  $('smReason').value = ''; $('smMsg').innerHTML = '';
+  $('smOk').textContent = cancel ? 'Cancel ' + (kind === 'pr' ? 'PR' : 'procurement') : 'Restore';
+  $('smOk').className = 'btn ' + (cancel ? 'danger' : 'primary');
+  $('statusModal').classList.add('show');
+  (cancel ? $('smBy') : $('smReason')).focus();
+}
+$('smOk').onclick = async () => {
+  const cancel = smState.status === 'Cancelled';
+  const info = { date: $('smDate').value, time: $('smTime').value, requestedBy: $('smBy').value.trim(), reason: $('smReason').value.trim() };
+  if (cancel && !info.requestedBy) { $('smMsg').innerHTML = '<div class="alert bad">Ilagay kung sino ang nagsabi na i-cancel.</div>'; return; }
+  if (cancel && (!info.date || !info.time)) { $('smMsg').innerHTML = '<div class="alert bad">Ilagay ang date at time.</div>'; return; }
+  if (cancel && !info.reason) { $('smMsg').innerHTML = '<div class="alert bad">Please enter the reason.</div>'; return; }
+  $('smOk').disabled = true;
+  try {
+    const res = await call('setStatus', smState.kind, smState.id, smState.status, info, D.year);
+    closeModal('statusModal');
+    applyRecord(res.record, res.budgets);
+    if (smState.kind === 'record' && form.id === smState.id) resetForm();
+    toast(smState.id + (cancel ? ' cancelled' : ' restored'));
+  } catch (e) { $('smMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>'; }
+  finally { $('smOk').disabled = false; }
+};
+
+/* ======================== BUDGET ======================== */
+function renderBudget() {
+  $('bTitle').textContent = 'Budget ' + D.year;
+  const q = $('bQ').value.trim().toUpperCase(), all = $('bAll').checked;
+  const offices = Array.from(new Set(D.offices.concat((D.budgets || []).map(b => b.office))));
+  const rows = offices.map(o => budgetOf[o] || { office: o, budget: null, used: 0, prs: 0 })
+    .filter(b => (all || b.budget != null || b.prs) && (!q || b.office.toUpperCase().indexOf(q) >= 0))
+    .sort((a, b) => (b.budget != null) - (a.budget != null) || a.office.localeCompare(b.office));
+  let tb = 0, tu = 0;
+  $('bBody').innerHTML = rows.map(b => {
+    const has = b.budget != null, left = has ? b.budget - b.used : null, pct = has && b.budget > 0 ? b.used / b.budget * 100 : (has && b.used ? 999 : 0);
+    if (has) tb += b.budget; tu += b.used;
+    return '<tr' + (has && left < 0 ? ' class="over"' : '') + '><td><span class="link" onclick="goList({ office: \'' + esc(b.office) + '\', doc: \'withPR\' })"><b>' + esc(b.office) + '</b></span></td>' +
+      '<td class="num">' + (has ? money(b.budget) : '<span class="muted">not set</span>') + '</td>' +
+      '<td class="num">' + money(b.used) + '</td>' +
+      '<td class="num">' + (has ? '<b' + (left < 0 ? ' style="color:var(--red)"' : '') + '>' + money(left) + '</b>' : '') + '</td>' +
+      '<td>' + (has ? '<div class="bar"><i class="' + (pct > 100 ? 'over' : pct > 85 ? 'warn' : '') + '" style="width:' + Math.min(pct, 100) + '%"></i></div><span class="small muted">' +
+        (pct >= 999 ? 'no budget' : Math.round(pct) + '%') + '</span>' : '') + '</td>' +
+      '<td class="num">' + b.prs + '</td>' +
+      '<td class="actions">' + (canEdit() ? '<button class="btn small" onclick="openBudget(\'' + esc(b.office) + '\')">' + (has ? 'Edit' : 'Set budget') + '</button>' : '') + '</td></tr>';
+  }).join('') + (rows.length ? '<tr class="total"><td>Total</td><td class="num">' + money(tb) + '</td><td class="num">' + money(tu) + '</td><td class="num">' + money(tb - tu) + '</td><td></td><td></td><td></td></tr>'
+    : '<tr><td colspan="7" class="muted">Wala pang budget. I-check ang "Show offices without budget" para maglagay.</td></tr>');
+}
+['bQ', 'bAll'].forEach(id => $(id).addEventListener('input', renderBudget));
+
+let bmOffice = '';
+function openBudget(office) {
+  bmOffice = office;
+  const b = budgetOf[office];
+  $('bmTitle').textContent = 'Budget — ' + office + ' ' + D.year;
+  $('bmAmount').value = b && b.budget != null ? b.budget : '';
+  $('bmInfo').textContent = b ? 'Nagamit na (PR ' + D.year + '): ₱' + money(b.used) + ' sa ' + b.prs + ' PR.' : 'Wala pang PR ngayong ' + D.year + '.';
+  $('bmRemove').style.display = b && b.budget != null ? 'inline-block' : 'none';
+  $('bmMsg').innerHTML = '';
+  $('budgetModal').classList.add('show');
+  $('bmAmount').focus();
+}
+async function saveBudgetNow(amount) {
+  ['bmSave', 'bmRemove'].forEach(id => $(id).disabled = true);
+  try {
+    const res = await call('saveBudget', D.year, bmOffice, amount);
+    D.budgets = res.budgets; index(D); renderAll(); updatePR();
+    closeModal('budgetModal');
+    toast('Budget of ' + bmOffice + ' saved');
+  } catch (e) { $('bmMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>'; }
+  finally { ['bmSave', 'bmRemove'].forEach(id => $(id).disabled = false); }
+}
+$('bmSave').onclick = () => {
+  const v = $('bmAmount').value;
+  if (v === '' || !(Number(v) >= 0)) { $('bmMsg').innerHTML = '<div class="alert bad">Enter the budget amount.</div>'; return; }
+  saveBudgetNow(Number(v));
+};
+$('bmRemove').onclick = () => { if (confirm('Tanggalin ang budget ng ' + bmOffice + ' ' + D.year + '?')) saveBudgetNow(''); };
+
+/* ======================== REPEATED ======================== */
+function renderRepeats() {
+  $('rBody').innerHTML = '<p class="muted">Checking…</p>';
+  setTimeout(() => {  // let the "Checking…" text show first
+    const q = $('rQ').value.trim().toUpperCase(), office = $('rOffice').value;
+    const groups = clusters($('rCross').checked).filter(g => g.some(inYear) &&
+      (!office || g.some(r => r.office === office)) &&
+      (!q || g.some(r => textsOf(r).join(' ').toUpperCase().indexOf(q) >= 0)))
+      .sort((a, b) => b.length - a.length);
+    $('rCount').textContent = groups.length + ' group(s)';
+    $('rBody').innerHTML = groups.slice(0, 150).map(g => {
+      const latest = g[g.length - 1];
+      const offices = Array.from(new Set(g.map(r => r.office)));
+      const cancelled = g.filter(r => r.status === 'Cancelled').length;
+      return '<div class="card flush cluster"><h4>' + esc(latest.title) + ' <span class="pill rep">' + g.length + ' records</span>' +
+        (cancelled ? '<span class="pill Cancelled">' + cancelled + ' cancelled</span>' : '') +
+        '<span class="small muted">' + esc(offices.join(', ')) + '</span></h4><table class="stack"><tbody>' +
+        g.map(r => '<tr' + (r.status === 'Cancelled' ? ' class="cancelled"' : '') + '><td data-label="ID" style="white-space:nowrap">' + idLink(r.id) +
+          '<div class="small muted">' + fmt(r.received) + '</div></td><td data-label="Office">' + esc(r.office) + '</td>' +
+          '<td data-label="Title"><span class="ttl">' + esc(r.title) + '</span>' + typeTag(r) + (whenWhere(r) ? '<div class="small muted">' + whenWhere(r) + '</div>' : '') +
+          '<div>' + (r.status === 'Cancelled' ? '<span class="pill Cancelled">Cancelled</span>' : '') + repeatPill(r) + '</div></td>' +
+          '<td data-label="Documents">' + docPills(r) + '</td></tr>').join('') + '</tbody></table></div>';
+    }).join('') || '<p class="muted">Walang kahawig na records.</p>';
+  }, 30);
+}
+let rTimer = null;
+['rQ', 'rOffice', 'rCross'].forEach(id => $(id).addEventListener('input', () => { clearTimeout(rTimer); rTimer = setTimeout(renderRepeats, 250); }));
+
+/* ======================== USERS (Admin) ======================== */
+let USERS = [], umState = {};
+async function renderUsers() {
+  if (!isAdmin()) return;
+  try {
+    USERS = await call('getUsers');
+    $('uBody').innerHTML = USERS.map(u => '<tr' + (u.active ? '' : ' class="cancelled"') + '><td><b>' + esc(u.username) + '</b></td><td>' + esc(u.name) +
+      '</td><td>' + esc(u.role) + '</td><td><span class="pill ' + (u.active ? 'ok' : 'Cancelled') + '">' + (u.active ? 'Active' : 'Inactive') + '</span></td>' +
+      '<td class="small">' + esc(u.lastLogin || '—') + '</td><td class="actions"><button class="btn small" onclick="openUser(\'' + esc(u.username) + '\')">Edit</button></td></tr>').join('');
+  } catch (e) { toast(e.message || e); }
+}
+
+function openUser(username) {
+  const u = USERS.find(x => x.username === username);
+  umState = { isNew: !u };
+  $('umTitle').textContent = u ? 'Edit ' + u.username : 'Add user';
+  $('umUser').value = u ? u.username : ''; $('umUser').disabled = !!u;
+  $('umName').value = u ? u.name : ''; $('umRole').value = u ? u.role : 'Encoder';
+  $('umPw').value = ''; $('umPwLabel').textContent = u ? 'New password (leave blank to keep)' : 'Password *';
+  $('umActive').checked = u ? u.active : true; $('umActiveBox').style.display = u ? 'block' : 'none';
+  $('umMsg').innerHTML = '';
+  $('userModal').classList.add('show');
+}
+
+$('umSave').onclick = async () => {
+  $('umSave').disabled = true;
+  try {
+    await call('saveUser', { username: $('umUser').value, name: $('umName').value, role: $('umRole').value,
+      active: $('umActive').checked, password: $('umPw').value, isNew: umState.isNew });
+    closeModal('userModal'); toast('User saved'); renderUsers();
+  } catch (e) { $('umMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>'; }
+  finally { $('umSave').disabled = false; }
+};
+
+function openPw() {
+  ['pwOld', 'pwNew', 'pwNew2'].forEach(id => $(id).value = '');
+  $('pwMsg').innerHTML = '';
+  $('pwModal').classList.add('show');
+}
+
+$('pwSave').onclick = async () => {
+  if ($('pwNew').value !== $('pwNew2').value) { $('pwMsg').innerHTML = '<div class="alert bad">New passwords do not match.</div>'; return; }
+  $('pwSave').disabled = true;
+  try { await call('changePassword', $('pwOld').value, $('pwNew').value); closeModal('pwModal'); toast('Password changed'); }
+  catch (e) { $('pwMsg').innerHTML = '<div class="alert bad">' + esc(e.message || e) + '</div>'; }
+  finally { $('pwSave').disabled = false; }
+};
+
+/** Copies each column name into its cells (data-label) so the phone layout can show it. */
+function labelCells() {
+  document.querySelectorAll('table.stack').forEach(t => {
+    const heads = Array.from(t.querySelectorAll('thead th')).map(th => th.textContent.trim());
+    if (!heads.length) return;
+    t.querySelectorAll('tbody tr').forEach(tr => Array.from(tr.children).forEach((td, i) => {
+      if (heads[i] && !td.hasAttribute('data-label') && td.colSpan === 1 && !td.classList.contains('actions')) td.setAttribute('data-label', heads[i]);
+    }));
+  });
+}
+new MutationObserver(labelCells).observe(document.body, { childList: true, subtree: true });
+
+/*
+ * The record view closes when clicking outside it or pressing Esc. Only there: the other windows have
+ * fields that would be lost. mousedown is checked too, so selecting text and letting go outside does not close it.
+ */
+let downOnBg = false;
+$('viewModal').addEventListener('mousedown', e => { downOnBg = e.target === e.currentTarget; });
+$('viewModal').addEventListener('click', e => { if (downOnBg && e.target === e.currentTarget) closeModal('viewModal'); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || !$('viewModal').classList.contains('show')) return;
+  if (!document.querySelector('.modal-bg.show:not(#viewModal)')) closeModal('viewModal'); // not while a window is open over it
+});
+
+if (TOKEN) startApp(); else showLogin();
+</script>
+</body>
+</html>

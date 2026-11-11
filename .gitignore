@@ -1,0 +1,24 @@
+# secrets
+.env
+.env.*
+*.pem
+*.key
+application-local.*
+application-prod.*
+
+# Java
+target/
+build/
+*.class
+.gradle/
+
+# Node
+node_modules/
+dist/
+.angular/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
