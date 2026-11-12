@@ -2,7 +2,15 @@
 
 Tantiyang tagal: mga 15–16 linggo, isang developer.
 
-**Kalagayan:** tapos na ang code ng Phase 1 (login, roles, users, audit log, menu, user import, deploy files). Ang natitira sa Phase 1 ay ang mismong pag-deploy sa staging server at pag-import ng totoong users.
+**Kalagayan:** tapos na ang code ng Phase 1 (login, roles, users, audit log, menu, user import, deploy files) at ng
+Phase 2 (Travel Orders). Hindi muna magde-deploy sa server: tatapusin muna ang lahat ng features (Phase 3 at 4), saka
+ang staging deploy, import ng totoong data at users.
+
+Natitira sa Phase 2:
+
+- Document checklist ng TO: hinihintay ang sagot sa tanong sa ibaba (itutuloy ba, at anong mga dokumento).
+- Paghahambing ng overlap check sa lumang system gamit ang totoong data: gagawin kasabay ng test import (Phase 5).
+  Ang rules ay kinopya mula sa `legacy/apps-script/travel-order` at may tests sa `backend/src/test/.../travel`.
 
 | Phase | Gagawin | Tagal | Tapos kapag |
 |---|---|---|---|

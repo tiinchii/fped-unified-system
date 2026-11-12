@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/api/travel/personnel/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updatePerson"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/travel/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateOrder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users/{id}": {
         parameters: {
             query?: never;
@@ -20,7 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/links/{id}": {
+    "/api/admin/offices/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -30,6 +62,102 @@ export interface paths {
         get?: never;
         put: operations["update_1"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/links/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_2"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/travel/personnel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addPerson"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/travel/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/travel/orders/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/travel/orders/{id}/reschedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reschedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/travel/orders/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -100,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/offices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/links": {
         parameters: {
             query?: never;
@@ -109,7 +253,39 @@ export interface paths {
         };
         get: operations["all"];
         put?: never;
-        post: operations["create_1"];
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/travel/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/travel/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["data"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -168,6 +344,111 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SavePerson: {
+            name: string;
+            /** Format: int64 */
+            officeId?: number;
+            position?: string;
+            /** @enum {string} */
+            employment?: "PERMANENT" | "COS";
+            active?: boolean;
+        };
+        PersonView: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            name: string;
+            /** Format: int64 */
+            officeId: number | null;
+            office: string;
+            position: string;
+            /** @enum {string|null} */
+            employment: "PERMANENT" | "COS" | null;
+            active: boolean;
+        };
+        SaveOrder: {
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            /** Format: date */
+            dateFiled?: string;
+            /** Format: int64 */
+            officeId: number;
+            destination: string;
+            purpose: string;
+            dtsNo?: string;
+            toNo?: string;
+            remarks?: string;
+            travelerIds: number[];
+            overlapReason?: string;
+        };
+        ChangeView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date */
+            oldStartDate: string;
+            /** Format: date */
+            oldEndDate: string;
+            /** Format: date */
+            newStartDate: string;
+            /** Format: date */
+            newEndDate: string;
+            oldDestination: string;
+            newDestination: string;
+            reason: string;
+            changedBy: string;
+            /** Format: date-time */
+            changedAt: string;
+        };
+        Conflict: {
+            /** Format: int64 */
+            personId: number;
+            personName: string;
+            /** Format: int64 */
+            orderId: number;
+            orderCode: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            destination: string;
+            office: string;
+        };
+        OrderView: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            /** Format: date */
+            dateFiled: string;
+            /** Format: int64 */
+            officeId: number;
+            office: string;
+            destination: string;
+            purpose: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            dtsNo: string;
+            toNo: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "CANCELLED";
+            remarks: string;
+            overlapReason: string;
+            encodedBy: string;
+            /** Format: date-time */
+            encodedAt: string;
+            updatedBy: string;
+            /** Format: date-time */
+            updatedAt: string;
+            travelerIds: number[];
+            changes: components["schemas"]["ChangeView"][];
+        };
+        SaveResult: {
+            order: components["schemas"]["OrderView"] | null;
+            conflicts: components["schemas"]["Conflict"][];
+        };
         UpdateUser: {
             fullName: string;
             /** @enum {string} */
@@ -188,6 +469,16 @@ export interface components {
             lastLoginAt: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        SaveOffice: {
+            name: string;
+            active?: boolean;
+        };
+        OfficeView: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            active: boolean;
         };
         SaveLink: {
             code?: string;
@@ -213,6 +504,18 @@ export interface components {
             sortOrder: number;
             active: boolean;
         };
+        StatusChange: {
+            reason: string;
+        };
+        Reschedule: {
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            destination?: string;
+            reason: string;
+            overlapReason?: string;
+        };
         LoginRequest: {
             username: string;
             password: string;
@@ -235,6 +538,33 @@ export interface components {
             /** @enum {string} */
             role: "ADMIN" | "ENCODER" | "VIEWER";
             password: string;
+        };
+        Summary: {
+            /** Format: date */
+            today: string;
+            /** Format: int64 */
+            onTravelToday: number;
+            /** Format: int64 */
+            startingIn7Days: number;
+            /** Format: int64 */
+            withoutToNo: number;
+        };
+        TravelData: {
+            orders: components["schemas"]["OrderView"][];
+            people: components["schemas"]["PersonView"][];
+            offices: components["schemas"]["OfficeView"][];
+            /** Format: date */
+            today: string;
+            /** Format: int32 */
+            year: number;
+            window: components["schemas"]["Window"];
+            years: number[];
+        };
+        Window: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
         };
         AuditPage: {
             items: components["schemas"]["AuditView"][];
@@ -264,6 +594,58 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    updatePerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavePerson"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonView"];
+                };
+            };
+        };
+    };
+    updateOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveOrder"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaveResult"];
+                };
+            };
+        };
+    };
     update: {
         parameters: {
             query?: never;
@@ -301,6 +683,32 @@ export interface operations {
         };
         requestBody: {
             content: {
+                "application/json": components["schemas"]["SaveOffice"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfficeView"];
+                };
+            };
+        };
+    };
+    update_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
                 "application/json": components["schemas"]["SaveLink"];
             };
         };
@@ -312,6 +720,132 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LinkView"];
+                };
+            };
+        };
+    };
+    addPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavePerson"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonView"];
+                };
+            };
+        };
+    };
+    createOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveOrder"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaveResult"];
+                };
+            };
+        };
+    };
+    restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaveResult"];
+                };
+            };
+        };
+    };
+    reschedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reschedule"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaveResult"];
+                };
+            };
+        };
+    };
+    cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrderView"];
                 };
             };
         };
@@ -424,6 +958,30 @@ export interface operations {
             };
         };
     };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveOffice"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfficeView"];
+                };
+            };
+        };
+    };
     all: {
         parameters: {
             query?: never;
@@ -444,7 +1002,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -464,6 +1022,48 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LinkView"];
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Summary"];
+                };
+            };
+        };
+    };
+    data: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TravelData"];
                 };
             };
         };

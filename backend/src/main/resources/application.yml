@@ -16,6 +16,7 @@ spring:
       ddl-auto: validate          # tables are created by Flyway (db/migration), never by Hibernate
     properties:
       hibernate.jdbc.time_zone: UTC   # times are stored in UTC and shown in Manila time by the app
+      hibernate.default_batch_fetch_size: 100   # travelers and history of many travel orders are read in a few queries
   flyway:
     enabled: true
 

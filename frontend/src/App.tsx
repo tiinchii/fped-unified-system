@@ -8,7 +8,9 @@ import { ComingSoonPage } from './pages/ComingSoonPage';
 import { HomePage } from './pages/HomePage';
 import { LinksPage } from './pages/LinksPage';
 import { LoginPage } from './pages/LoginPage';
+import { OfficesPage } from './pages/OfficesPage';
 import { UsersPage } from './pages/UsersPage';
+import { TravelPage } from './travel/TravelPage';
 
 /** Hides a page from roles that may not use it. The server checks the role again on every request. */
 function Only({ roles, children }: { roles: Role[]; children: ReactNode }) {
@@ -25,12 +27,7 @@ export function App() {
     <Routes>
       <Route element={<Shell />}>
         <Route index element={<HomePage />} />
-        <Route path="travel-orders" element={<ComingSoonPage title="Travel Orders" phase="Phase 2" items={[
-          'Encode a travel order with its travelers, dates, DTS No. and TO No.',
-          'Warn when a traveler already has travel on the same dates (overlap check)',
-          'Catch the same person typed two ways (duplicate names)',
-          'Reschedule, cancel and restore, with the history kept',
-        ]} />} />
+        <Route path="travel-orders" element={<TravelPage />} />
         <Route path="procurement" element={<ComingSoonPage title="Procurement" phase="Phase 3" items={[
           'Step 1 Proposal, Step 2 Purchase Request, Step 3 SPPMP, Step 4 Routing',
           'Flag a PR with missing attachments: "Incomplete – return to office"',
@@ -48,6 +45,7 @@ export function App() {
           'Add, edit and delete events; they show in Google Calendar too',
         ]} /></Only>} />
         <Route path="admin/users" element={<Only roles={['ADMIN']}><UsersPage /></Only>} />
+        <Route path="admin/offices" element={<Only roles={['ADMIN']}><OfficesPage /></Only>} />
         <Route path="admin/links" element={<Only roles={['ADMIN']}><LinksPage /></Only>} />
         <Route path="admin/audit" element={<Only roles={['ADMIN']}><AuditPage /></Only>} />
         <Route path="*" element={<Navigate to="/" replace />} />

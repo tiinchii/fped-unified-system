@@ -67,6 +67,7 @@ export function Shell() {
         {hasRole('ADMIN') && <>
           <div className="grp">Admin</div>
           {item('/admin/users', 'Users')}
+          {item('/admin/offices', 'Offices')}
           {item('/admin/links', 'Menu links')}
           {item('/admin/audit', 'Audit log')}
         </>}

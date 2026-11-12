@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -66,6 +67,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
                         .requestMatchers("/v3/api-docs", "/v3/api-docs/**").permitAll() // only switched on in the dev profile
                         .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
+                        // Travel Orders: everyone reads, only Admin and Encoder change
+                        .requestMatchers(HttpMethod.GET, "/api/travel/**").authenticated()
+                        .requestMatchers("/api/travel/**").hasAnyRole(Role.ADMIN.name(), Role.ENCODER.name())
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint((req, res, ex) ->

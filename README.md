@@ -17,7 +17,7 @@ Papalitan nito ang dalawang Google Apps Script app (Travel Order System at Procu
 ## Modules
 
 1. **Portal** – home dashboard, menu ng lahat ng system, settings
-2. **Travel Orders** – encode, overlap at duplicate check, reschedule, cancel/restore, personnel
+2. **Travel Orders** – encode, overlap at duplicate check, reschedule, cancel/restore, personnel, calendar, reports
 3. **Procurement** – proposal, PR, SPPMP, routing, budgets, repeat check
 4. **Gmail** – basa, label, print, "Gawing event" (walang reply)
 5. **Calendar** – month/week view, add/edit/delete
@@ -39,8 +39,8 @@ legacy/apps-script/   ang dalawang lumang Apps Script app, para sa reference at 
 | Phase | Ano | Kalagayan |
 |---|---|---|
 | 1 | Pundasyon: login, roles, users, audit log, portal shell at menu | Tapos (hindi pa naka-deploy sa server) |
-| 2 | Travel Orders | Susunod |
-| 3 | Procurement | |
+| 2 | Travel Orders: personnel, TO, overlap at duplicate-name check, reschedule, cancel/restore, calendar, reports, offices | Tapos ang code (wala pa ang document checklist; hindi pa nalilipat ang data) |
+| 3 | Procurement | Susunod |
 | 4 | Gmail at Calendar | |
 | 5 | Import ng data at testing | |
 | 6 | Go-live | |

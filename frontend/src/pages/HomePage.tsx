@@ -1,12 +1,14 @@
 import { Link, useOutletContext } from 'react-router-dom';
 import { useAuth, useMe } from '../auth/AuthContext';
 import type { ShellContext } from '../components/Shell';
+import { useEffect, useState } from 'react';
+import { api, unwrap, type Schemas } from '../api/client';
 import { manilaHour, todayLong } from '../format';
 
-interface Module { to: string; name: string; text: string; color: string; phase: string }
+interface Module { to: string; name: string; text: string; color: string; phase?: string }
 
 const MODULES: Module[] = [
-  { to: '/travel-orders', name: 'Travel Orders', text: 'Check TOs before signing: overlaps, duplicates, reschedules', color: '#1f4e79', phase: 'Phase 2' },
+  { to: '/travel-orders', name: 'Travel Orders', text: 'Check TOs before signing: overlaps, duplicates, reschedules', color: '#1f4e79' },
   { to: '/procurement', name: 'Procurement', text: 'Proposals, PRs, SPPMP, routing and budgets', color: '#7d3c98', phase: 'Phase 3' },
 ];
 const GOOGLE: Module[] = [
@@ -20,6 +22,8 @@ export function HomePage() {
   const { links } = useOutletContext<ShellContext>();
   const hour = manilaHour();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const [travel, setTravel] = useState<Schemas['Summary'] | null>(null);
+  useEffect(() => { unwrap(api.GET('/api/travel/summary')).then(setTravel).catch(() => setTravel(null)); }, []);
   const modules = hasRole('ADMIN', 'ENCODER') ? [...MODULES, ...GOOGLE] : MODULES;
 
   return (
@@ -28,15 +32,24 @@ export function HomePage() {
       <p className="sub">{todayLong()}</p>
 
       <div className="alert">
-        The portal is being built in phases. Login, users and this menu are ready; the modules below open as each
-        phase is finished. Until then, keep using the current Travel Order and Procurement apps.
+        The portal is being built in phases. Travel Orders is ready to try; the other modules open as each phase is
+        finished. Until the data is moved (go-live), keep using the current Travel Order and Procurement apps for real records.
       </div>
+
+      {travel && <>
+        <h3>Travel today</h3>
+        <div className="stats">
+          <Link to="/travel-orders" className="stat"><b>{travel.onTravelToday}</b><span>On travel today</span></Link>
+          <Link to="/travel-orders" className="stat"><b>{travel.startingIn7Days}</b><span>Travel orders starting in the next 7 days</span></Link>
+          <Link to="/travel-orders" className={'stat' + (travel.withoutToNo ? ' amber' : '')}><b>{travel.withoutToNo}</b><span>Travel orders without a TO No.</span></Link>
+        </div>
+      </>}
 
       <h3>Systems</h3>
       <div className="tiles">
         {modules.map((m) => (
           <Link key={m.to} to={m.to} className="tile" style={{ ['--c' as string]: m.color }}>
-            <b>{m.name}</b><span>{m.text}</span><em className="pill warn">{m.phase}</em>
+            <b>{m.name}</b><span>{m.text}</span>{m.phase && <em className="pill warn">{m.phase}</em>}
           </Link>
         ))}
         {links.map((l) => l.url
