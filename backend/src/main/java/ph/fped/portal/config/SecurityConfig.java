@@ -67,9 +67,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
                         .requestMatchers("/v3/api-docs", "/v3/api-docs/**").permitAll() // only switched on in the dev profile
                         .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
-                        // Travel Orders: everyone reads, only Admin and Encoder change
+                        // Travel Orders and Procurement: everyone reads, only Admin and Encoder change
                         .requestMatchers(HttpMethod.GET, "/api/travel/**").authenticated()
                         .requestMatchers("/api/travel/**").hasAnyRole(Role.ADMIN.name(), Role.ENCODER.name())
+                        .requestMatchers(HttpMethod.GET, "/api/procurement/**").authenticated()
+                        .requestMatchers("/api/procurement/**").hasAnyRole(Role.ADMIN.name(), Role.ENCODER.name())
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint((req, res, ex) ->

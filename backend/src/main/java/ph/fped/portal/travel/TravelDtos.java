@@ -17,7 +17,7 @@ public final class TravelDtos {
 
     public record OfficeView(long id, String name, boolean active) {
 
-        static OfficeView of(Office o) {
+        public static OfficeView of(Office o) {
             return new OfficeView(o.getId(), o.getName(), o.isActive());
         }
     }

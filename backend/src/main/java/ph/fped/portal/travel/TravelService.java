@@ -1,6 +1,5 @@
 package ph.fped.portal.travel;
 
-import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -16,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ph.fped.portal.audit.AuditService;
 import ph.fped.portal.common.ApiException;
+import ph.fped.portal.common.AppLock;
+import ph.fped.portal.common.Codes;
 import ph.fped.portal.travel.TravelDtos.Conflict;
 import ph.fped.portal.travel.TravelDtos.OfficeView;
 import ph.fped.portal.travel.TravelDtos.OrderView;
@@ -45,15 +46,15 @@ public class TravelService {
     private final PersonnelRepository personnel;
     private final OfficeRepository offices;
     private final AuditService audit;
-    private final EntityManager em;
+    private final AppLock appLock;
 
     public TravelService(TravelOrderRepository orders, PersonnelRepository personnel, OfficeRepository offices,
-                         AuditService audit, EntityManager em) {
+                         AuditService audit, AppLock appLock) {
         this.orders = orders;
         this.personnel = personnel;
         this.offices = offices;
         this.audit = audit;
-        this.em = em;
+        this.appLock = appLock;
     }
 
     public static LocalDate today() {
@@ -231,7 +232,7 @@ public class TravelService {
     /** TO-2027-00001, TO-2027-00002, … for the year of the filing date. Caller must hold the lock. */
     private String nextOrderCode(int year) {
         String prefix = "TO-" + year + "-";
-        return prefix + String.format("%05d", nextNumber(orders.findCodesStartingWith(prefix), prefix));
+        return Codes.next(orders.findCodesStartingWith(prefix), prefix, 5);
     }
 
     private TravelOrder find(long id) {
@@ -271,7 +272,7 @@ public class TravelService {
 
         Personnel person;
         if (id == null) {
-            person = new Personnel("P" + String.format("%04d", nextNumber(personnel.findAllCodes(), "P")));
+            person = new Personnel(Codes.next(personnel.findAllCodes(), "P", 4));
         } else {
             person = personnel.findById(id).orElseThrow(() -> ApiException.notFound("Person not found."));
         }
@@ -312,26 +313,8 @@ public class TravelService {
 
     /* ======================== helpers ======================== */
 
-    /**
-     * Waits until nobody else is saving, and holds the lock until this save is finished. Without it, two people
-     * saving at the same moment could both pass the overlap check or get the same TO number.
-     */
     private void lock() {
-        em.createNativeQuery("select name from app_locks where name = 'travel' for update").getResultList();
-    }
-
-    /** One more than the highest number in use among the codes that start with the prefix. */
-    private static int nextNumber(List<String> codes, String prefix) {
-        int max = 0;
-        for (String code : codes) {
-            if (!code.startsWith(prefix)) continue;
-            try {
-                max = Math.max(max, Integer.parseInt(code.substring(prefix.length())));
-            } catch (NumberFormatException e) {
-                // not one of ours (e.g. typed by hand in the old sheet): ignore
-            }
-        }
-        return max + 1;
+        appLock.hold(AppLock.TRAVEL);
     }
 
     private static String trim(String s) {
