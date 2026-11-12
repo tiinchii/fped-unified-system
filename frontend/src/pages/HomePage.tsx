@@ -9,7 +9,7 @@ interface Module { to: string; name: string; text: string; color: string; phase?
 
 const MODULES: Module[] = [
   { to: '/travel-orders', name: 'Travel Orders', text: 'Check TOs before signing: overlaps, duplicates, reschedules', color: '#1f4e79' },
-  { to: '/procurement', name: 'Procurement', text: 'Proposals, PRs, SPPMP, routing and budgets', color: '#7d3c98', phase: 'Phase 3' },
+  { to: '/procurement', name: 'Procurement', text: 'Proposals, PRs, SPPMP, routing and budgets', color: '#7d3c98' },
 ];
 const GOOGLE: Module[] = [
   { to: '/email', name: 'Email', text: 'Office inbox: read, label and print', color: '#c0392b', phase: 'Phase 4' },
@@ -23,7 +23,11 @@ export function HomePage() {
   const hour = manilaHour();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const [travel, setTravel] = useState<Schemas['Summary'] | null>(null);
-  useEffect(() => { unwrap(api.GET('/api/travel/summary')).then(setTravel).catch(() => setTravel(null)); }, []);
+  const [proc, setProc] = useState<Schemas['ProcurementSummary'] | null>(null);
+  useEffect(() => {
+    unwrap(api.GET('/api/travel/summary')).then(setTravel).catch(() => setTravel(null));
+    unwrap(api.GET('/api/procurement/summary')).then(setProc).catch(() => setProc(null));
+  }, []);
   const modules = hasRole('ADMIN', 'ENCODER') ? [...MODULES, ...GOOGLE] : MODULES;
 
   return (
@@ -32,8 +36,8 @@ export function HomePage() {
       <p className="sub">{todayLong()}</p>
 
       <div className="alert">
-        The portal is being built in phases. Travel Orders is ready to try; the other modules open as each phase is
-        finished. Until the data is moved (go-live), keep using the current Travel Order and Procurement apps for real records.
+        The portal is being built in phases. Travel Orders and Procurement are ready to try; Email and Calendar open when
+        Phase 4 is finished. Until the data is moved (go-live), keep using the current Travel Order and Procurement apps for real records.
       </div>
 
       {travel && <>
@@ -42,6 +46,15 @@ export function HomePage() {
           <Link to="/travel-orders" className="stat"><b>{travel.onTravelToday}</b><span>On travel today</span></Link>
           <Link to="/travel-orders" className="stat"><b>{travel.startingIn7Days}</b><span>Travel orders starting in the next 7 days</span></Link>
           <Link to="/travel-orders" className={'stat' + (travel.withoutToNo ? ' amber' : '')}><b>{travel.withoutToNo}</b><span>Travel orders without a TO No.</span></Link>
+        </div>
+      </>}
+
+      {proc && <>
+        <h3>Procurement this year</h3>
+        <div className="stats">
+          <Link to="/procurement" className={'stat' + (proc.forReview ? ' amber' : '')}><b>{proc.forReview}</b><span>For review FPED</span></Link>
+          <Link to="/procurement" className={'stat' + (proc.incompletePrs ? ' red' : '')}><b>{proc.incompletePrs}</b><span>PR incomplete / return to office</span></Link>
+          <Link to="/procurement" className="stat"><b>{proc.withoutPr}</b><span>Procurements without a PR yet</span></Link>
         </div>
       </>}
 

@@ -25,7 +25,7 @@ import ph.fped.portal.procurement.ProcurementDtos.SaveBudget;
 import ph.fped.portal.procurement.ProcurementDtos.SavePr;
 import ph.fped.portal.procurement.ProcurementDtos.SaveRecord;
 import ph.fped.portal.procurement.ProcurementDtos.SaveSppmp;
-import ph.fped.portal.procurement.ProcurementDtos.Summary;
+import ph.fped.portal.procurement.ProcurementDtos.ProcurementSummary;
 
 /**
  * Everyone who is logged in may read; only Admin and Encoder may change (see SecurityConfig: /api/procurement/**).
@@ -47,7 +47,7 @@ public class ProcurementController {
     }
 
     @GetMapping("/summary")
-    public Summary summary() {
+    public ProcurementSummary summary() {
         return service.summary();
     }
 

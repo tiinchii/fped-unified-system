@@ -40,8 +40,8 @@ legacy/apps-script/   ang dalawang lumang Apps Script app, para sa reference at 
 |---|---|---|
 | 1 | Pundasyon: login, roles, users, audit log, portal shell at menu | Tapos (hindi pa naka-deploy sa server) |
 | 2 | Travel Orders: personnel, TO, overlap at duplicate-name check, reschedule, cancel/restore, calendar, reports, offices | Tapos ang code (wala pa ang document checklist; hindi pa nalilipat ang data) |
-| 3 | Procurement | Susunod |
-| 4 | Gmail at Calendar | |
+| 3 | Procurement: proposal, PR, SPPMP, routing, cancel/restore, budget, repeat check | Tapos ang code (hindi pa nalilipat ang data) |
+| 4 | Gmail at Calendar | Susunod |
 | 5 | Import ng data at testing | |
 | 6 | Go-live | |
 

@@ -126,7 +126,7 @@ public final class ProcurementDtos {
     public record ProposalResult(@Schema(nullable = true) RecordView record, List<Similar> similar, List<BudgetLine> budgets) {}
 
     /** For the home page: this year's active records. */
-    public record Summary(long forReview, long incompletePrs, long withoutPr) {}
+    public record ProcurementSummary(long forReview, long incompletePrs, long withoutPr) {}
 
     /* ---------- what the API accepts ---------- */
 

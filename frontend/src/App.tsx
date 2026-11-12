@@ -10,6 +10,7 @@ import { LinksPage } from './pages/LinksPage';
 import { LoginPage } from './pages/LoginPage';
 import { OfficesPage } from './pages/OfficesPage';
 import { UsersPage } from './pages/UsersPage';
+import { ProcurementPage } from './procurement/ProcurementPage';
 import { TravelPage } from './travel/TravelPage';
 
 /** Hides a page from roles that may not use it. The server checks the role again on every request. */
@@ -28,12 +29,7 @@ export function App() {
       <Route element={<Shell />}>
         <Route index element={<HomePage />} />
         <Route path="travel-orders" element={<TravelPage />} />
-        <Route path="procurement" element={<ComingSoonPage title="Procurement" phase="Phase 3" items={[
-          'Step 1 Proposal, Step 2 Purchase Request, Step 3 SPPMP, Step 4 Routing',
-          'Flag a PR with missing attachments: "Incomplete – return to office"',
-          'Budget per office per year, reduced by each PR',
-          'Warn when an activity looks like an earlier one (repeat check)',
-        ]} />} />
+        <Route path="procurement" element={<ProcurementPage />} />
         <Route path="email" element={<Only roles={['ADMIN', 'ENCODER']}><ComingSoonPage title="Email" phase="Phase 4" items={[
           'Read the office inbox, with attachments',
           'Add and remove labels, filter by label',

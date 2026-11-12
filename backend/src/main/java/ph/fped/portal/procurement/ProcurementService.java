@@ -44,7 +44,7 @@ import ph.fped.portal.procurement.ProcurementDtos.SavePr;
 import ph.fped.portal.procurement.ProcurementDtos.SaveRecord;
 import ph.fped.portal.procurement.ProcurementDtos.SaveSppmp;
 import ph.fped.portal.procurement.ProcurementDtos.Similar;
-import ph.fped.portal.procurement.ProcurementDtos.Summary;
+import ph.fped.portal.procurement.ProcurementDtos.ProcurementSummary;
 import ph.fped.portal.travel.Office;
 import ph.fped.portal.travel.OfficeRepository;
 import ph.fped.portal.travel.TravelDtos.OfficeView;
@@ -113,14 +113,14 @@ public class ProcurementService {
     }
 
     @Transactional(readOnly = true)
-    public Summary summary() {
+    public ProcurementSummary summary() {
         int year = TravelService.today().getYear();
         List<Procurement> active = records.findOfYear(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31), "PROC-" + year + "-")
                 .stream().filter(r -> !r.isCancelled()).toList();
         long forReview = active.stream().filter(ProcurementService::hasReview).count();
         long incomplete = active.stream().flatMap(r -> r.prs.stream()).filter(PurchaseRequest::isIncomplete).count();
         long withoutPr = active.stream().filter(r -> r.prs.stream().allMatch(PurchaseRequest::isCancelled)).count();
-        return new Summary(forReview, incomplete, withoutPr);
+        return new ProcurementSummary(forReview, incomplete, withoutPr);
     }
 
     private static boolean hasReview(Procurement r) {

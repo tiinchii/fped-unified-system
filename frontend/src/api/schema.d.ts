@@ -36,6 +36,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/procurement/records/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["record"];
+        put: operations["updateRecord"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/records/{id}/prs/{prId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updatePr"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/prs/{prId}/sppmp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["saveSppmp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["saveBudget"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users/{id}": {
         parameters: {
             query?: never;
@@ -158,6 +222,118 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/records/{id}/routing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addRouting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/records/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restoreRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/records/{id}/prs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createPr"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/records/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/prs/{prId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restorePr"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/prs/{prId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelPr"];
         delete?: never;
         options?: never;
         head?: never;
@@ -292,6 +468,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/procurement/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["summary_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["data_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/links": {
         parameters: {
             query?: never;
@@ -335,6 +543,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/procurement/routing/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteRouting"];
         options?: never;
         head?: never;
         patch?: never;
@@ -449,6 +673,223 @@ export interface components {
             order: components["schemas"]["OrderView"] | null;
             conflicts: components["schemas"]["Conflict"][];
         };
+        SaveRecord: {
+            /** Format: date */
+            dateReceived?: string;
+            /** Format: int64 */
+            officeId: number;
+            preparedBy?: string;
+            /** @enum {string} */
+            proposalType: "ACTIVITY_PROPOSAL" | "PROJECT_PROPOSAL" | "NONE";
+            withAtc?: boolean;
+            /** @enum {string} */
+            procType: "EVENT" | "EQUIPMENT" | "REPAIR" | "HIRING" | "OTHERS";
+            title: string;
+            details?: string;
+            venue?: string;
+            /** Format: date */
+            startDate?: string;
+            /** Format: date */
+            endDate?: string;
+            amount?: number;
+            /** @enum {string} */
+            proposalStatus?: "FOR_REVIEW" | "SIGNED_WITHOUT_REVIEW" | "SIGNED_WITH_REVIEW";
+            /** @enum {string} */
+            atcStatus?: "FOR_REVIEW" | "SIGNED_WITHOUT_REVIEW" | "SIGNED_WITH_REVIEW";
+            dtsNo?: string;
+            logbookNo?: string;
+            remarks?: string;
+            /** @enum {string} */
+            repeatType?: "REPEAT" | "RESUBMISSION" | "SAME_ACTIVITY" | "DIFFERENT";
+            /** Format: int64 */
+            repeatOfId?: number;
+            repeatNote?: string;
+        };
+        BudgetLine: {
+            /** Format: int64 */
+            officeId: number;
+            office: string;
+            budget: number | null;
+            used: number;
+            /** Format: int32 */
+            prs: number;
+        };
+        CancelView: {
+            /** Format: date-time */
+            at: string;
+            requestedBy: string;
+            reason: string;
+            by: string;
+        };
+        ItemView: {
+            description: string;
+            amount: number;
+        };
+        PrView: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            /** Format: int64 */
+            recordId: number;
+            dtsNo: string;
+            /** Format: date */
+            dateReceived: string | null;
+            /** Format: date */
+            prDate: string | null;
+            requisitioner: string;
+            title: string;
+            venue: string;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            amount: number;
+            /** @enum {string|null} */
+            plan: "PPMP" | "SPPMP" | null;
+            justification: string;
+            /** @enum {string|null} */
+            facility: "GOVERNMENT" | "NON_GOVERNMENT" | null;
+            facilityJustification: string;
+            /** @enum {string|null} */
+            prStatus: "FOR_REVIEW" | "SIGNED_WITHOUT_REVIEW" | "SIGNED_WITH_REVIEW" | null;
+            /** @enum {string} */
+            status: "ACTIVE" | "CANCELLED";
+            cancel: components["schemas"]["CancelView"] | null;
+            /** Format: int64 */
+            replacesId: number | null;
+            remarks: string;
+            source: string;
+            encodedBy: string;
+            /** Format: date-time */
+            encodedAt: string;
+            updatedBy: string;
+            items: components["schemas"]["ItemView"][];
+        };
+        ProposalResult: {
+            record: components["schemas"]["RecordView"] | null;
+            similar: components["schemas"]["Similar"][];
+            budgets: components["schemas"]["BudgetLine"][];
+        };
+        RecordView: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            /** Format: date */
+            dateReceived: string | null;
+            /** Format: int64 */
+            officeId: number;
+            office: string;
+            preparedBy: string;
+            /** @enum {string} */
+            proposalType: "ACTIVITY_PROPOSAL" | "PROJECT_PROPOSAL" | "NONE";
+            withAtc: boolean;
+            /** @enum {string} */
+            procType: "EVENT" | "EQUIPMENT" | "REPAIR" | "HIRING" | "OTHERS";
+            title: string;
+            details: string;
+            venue: string;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            amount: number | null;
+            /** @enum {string|null} */
+            proposalStatus: "FOR_REVIEW" | "SIGNED_WITHOUT_REVIEW" | "SIGNED_WITH_REVIEW" | null;
+            /** @enum {string|null} */
+            atcStatus: "FOR_REVIEW" | "SIGNED_WITHOUT_REVIEW" | "SIGNED_WITH_REVIEW" | null;
+            dtsNo: string;
+            logbookNo: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "CANCELLED";
+            cancel: components["schemas"]["CancelView"] | null;
+            /** @enum {string|null} */
+            repeatType: "REPEAT" | "RESUBMISSION" | "SAME_ACTIVITY" | "DIFFERENT" | null;
+            /** Format: int64 */
+            repeatOfId: number | null;
+            repeatNote: string;
+            remarks: string;
+            source: string;
+            encodedBy: string;
+            /** Format: date-time */
+            encodedAt: string;
+            updatedBy: string;
+            prs: components["schemas"]["PrView"][];
+            routing: components["schemas"]["RouteView"][];
+        };
+        RouteView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            prId: number | null;
+            /** Format: date-time */
+            happenedAt: string;
+            /** @enum {string} */
+            action: "FORWARDED" | "REVIEWED" | "SIGNED" | "RETURNED" | "RECEIVED_BACK" | "OTHER";
+            person: string;
+            remarks: string;
+            encodedBy: string;
+        };
+        Similar: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            /** Format: int32 */
+            score: number;
+            matched: string;
+            title: string;
+            /** Format: int64 */
+            officeId: number;
+            office: string;
+            /** Format: date */
+            dateReceived: string | null;
+            /** @enum {string} */
+            status: "ACTIVE" | "CANCELLED";
+        };
+        SavePr: {
+            dtsNo?: string;
+            /** Format: date */
+            dateReceived: string;
+            /** Format: date */
+            prDate?: string;
+            requisitioner?: string;
+            title: string;
+            venue?: string;
+            /** Format: date */
+            startDate?: string;
+            /** Format: date */
+            endDate?: string;
+            amount: number;
+            /** @enum {string} */
+            plan?: "PPMP" | "SPPMP";
+            justification?: string;
+            /** @enum {string} */
+            facility?: "GOVERNMENT" | "NON_GOVERNMENT";
+            facilityJustification?: string;
+            /** @enum {string} */
+            prStatus: "FOR_REVIEW" | "SIGNED_WITHOUT_REVIEW" | "SIGNED_WITH_REVIEW";
+            /** Format: int64 */
+            replacesId?: number;
+            remarks?: string;
+        };
+        RecordResult: {
+            record: components["schemas"]["RecordView"];
+            budgets: components["schemas"]["BudgetLine"][];
+        };
+        SaveItem: {
+            description: string;
+            amount: number;
+        };
+        SaveSppmp: {
+            justification?: string;
+            items: components["schemas"]["SaveItem"][];
+        };
+        SaveBudget: {
+            /** Format: int32 */
+            year: number;
+            /** Format: int64 */
+            officeId: number;
+            amount?: number;
+        };
         UpdateUser: {
             fullName: string;
             /** @enum {string} */
@@ -516,6 +957,27 @@ export interface components {
             reason: string;
             overlapReason?: string;
         };
+        AddRouting: {
+            /** Format: int64 */
+            prId?: number;
+            /** Format: date */
+            date: string;
+            time?: string;
+            /** @enum {string} */
+            action: "FORWARDED" | "REVIEWED" | "SIGNED" | "RETURNED" | "RECEIVED_BACK" | "OTHER";
+            person: string;
+            remarks?: string;
+        };
+        RestoreRequest: {
+            reason: string;
+        };
+        CancelRequest: {
+            /** Format: date */
+            date: string;
+            time?: string;
+            requestedBy: string;
+            reason: string;
+        };
         LoginRequest: {
             username: string;
             password: string;
@@ -565,6 +1027,59 @@ export interface components {
             from: string;
             /** Format: date */
             to: string;
+        };
+        ProcurementSummary: {
+            /** Format: int64 */
+            forReview: number;
+            /** Format: int64 */
+            incompletePrs: number;
+            /** Format: int64 */
+            withoutPr: number;
+        };
+        LitePr: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            dtsNo: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "CANCELLED";
+            title: string;
+        };
+        LiteRecord: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            /** Format: date */
+            dateReceived: string | null;
+            /** Format: int64 */
+            officeId: number;
+            office: string;
+            title: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "CANCELLED";
+            /** @enum {string|null} */
+            repeatType: "REPEAT" | "RESUBMISSION" | "SAME_ACTIVITY" | "DIFFERENT" | null;
+            /** Format: int64 */
+            repeatOfId: number | null;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            /** @enum {string} */
+            procType: "EVENT" | "EQUIPMENT" | "REPAIR" | "HIRING" | "OTHERS";
+            dtsNo: string;
+            prs: components["schemas"]["LitePr"][];
+        };
+        ProcurementData: {
+            records: components["schemas"]["RecordView"][];
+            otherYears: components["schemas"]["LiteRecord"][];
+            budgets: components["schemas"]["BudgetLine"][];
+            offices: components["schemas"]["OfficeView"][];
+            /** Format: date */
+            today: string;
+            /** Format: int32 */
+            year: number;
+            years: number[];
         };
         AuditPage: {
             items: components["schemas"]["AuditView"][];
@@ -642,6 +1157,137 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SaveResult"];
+                };
+            };
+        };
+    };
+    record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordView"];
+                };
+            };
+        };
+    };
+    updateRecord: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveRecord"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProposalResult"];
+                };
+            };
+        };
+    };
+    updatePr: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+                prId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavePr"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
+                };
+            };
+        };
+    };
+    saveSppmp: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                prId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveSppmp"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
+                };
+            };
+        };
+    };
+    saveBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveBudget"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BudgetLine"][];
                 };
             };
         };
@@ -846,6 +1492,200 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["OrderView"];
+                };
+            };
+        };
+    };
+    createRecord: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveRecord"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProposalResult"];
+                };
+            };
+        };
+    };
+    addRouting: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddRouting"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
+                };
+            };
+        };
+    };
+    restoreRecord: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
+                };
+            };
+        };
+    };
+    createPr: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavePr"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
+                };
+            };
+        };
+    };
+    cancelRecord: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
+                };
+            };
+        };
+    };
+    restorePr: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                prId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
+                };
+            };
+        };
+    };
+    cancelPr: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                prId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
                 };
             };
         };
@@ -1068,6 +1908,48 @@ export interface operations {
             };
         };
     };
+    summary_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProcurementSummary"];
+                };
+            };
+        };
+    };
+    data_1: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProcurementData"];
+                };
+            };
+        };
+    };
     mine: {
         parameters: {
             query?: never;
@@ -1128,6 +2010,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuditPage"];
+                };
+            };
+        };
+    };
+    deleteRouting: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path: {
+                entryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordResult"];
                 };
             };
         };

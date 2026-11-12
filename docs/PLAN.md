@@ -2,15 +2,18 @@
 
 Tantiyang tagal: mga 15–16 linggo, isang developer.
 
-**Kalagayan:** tapos na ang code ng Phase 1 (login, roles, users, audit log, menu, user import, deploy files) at ng
-Phase 2 (Travel Orders). Hindi muna magde-deploy sa server: tatapusin muna ang lahat ng features (Phase 3 at 4), saka
-ang staging deploy, import ng totoong data at users.
+**Kalagayan:** tapos na ang code ng Phase 1 (login, roles, users, audit log, menu, user import, deploy files),
+Phase 2 (Travel Orders) at Phase 3 (Procurement). Hindi muna magde-deploy sa server: tatapusin muna ang lahat ng
+features (Phase 4), saka ang staging deploy, import ng totoong data at users.
 
-Natitira sa Phase 2:
+Natitira sa Phase 2 at 3:
 
 - Document checklist ng TO: hinihintay ang sagot sa tanong sa ibaba (itutuloy ba, at anong mga dokumento).
-- Paghahambing ng overlap check sa lumang system gamit ang totoong data: gagawin kasabay ng test import (Phase 5).
-  Ang rules ay kinopya mula sa `legacy/apps-script/travel-order` at may tests sa `backend/src/test/.../travel`.
+- Paghahambing sa lumang system gamit ang totoong data (overlap check, incomplete PRs, budget totals): gagawin
+  kasabay ng test import (Phase 5). Ang rules ay kinopya mula sa `legacy/apps-script/` at may tests sa
+  `backend/src/test/.../travel` at `.../procurement`.
+- Pagtutugma ng offices na iba ang baybay sa dalawang lumang system (hal. ADJU at ADJUDICATION, ENGR at ENGINEERING,
+  LIB at LIBRARY): gagawin sa import (Phase 5).
 
 | Phase | Gagawin | Tagal | Tapos kapag |
 |---|---|---|---|
