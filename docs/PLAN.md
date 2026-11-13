@@ -31,7 +31,8 @@ Natitira sa Phase 2 at 3:
 - [x] Angular o React ang frontend? **React + TypeScript**
 - [x] Itutuloy ba ang TO document checklist? **Oo.** Wala pang listahan ng mga dokumento, kaya ang Admin ang
   maglalagay nito sa Settings. Iisang checklist bawat TO, makikita agad kung ano ang kulang kapag ibinalik.
-- [x] Gmail? **Hindi muna isasama** (delikado kung makompromiso ang account). Calendar lang.
+- [ ] Gmail? **Pinag-iisipan pa** (baka delikado kung makompromiso ang account). Nasa menu pa rin ang Email para
+  madaling idagdag sa susunod; Calendar lang muna ang gagawin sa Phase 4.
 - [x] Primary o shared calendar? **Shared calendar** ng lahat ng sections (calendar ID ilalagay sa Settings).
 - [x] Workspace super admin? **IT Dept.** Mukhang hindi naka-restrict ang Google Cloud console; kumpirmahin kapag
   ginagawa na ang OAuth app.

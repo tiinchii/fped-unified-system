@@ -21,7 +21,8 @@ Papalitan nito ang dalawang Google Apps Script app (Travel Order System at Procu
 3. **Procurement** – proposal, PR, SPPMP, routing, budgets, repeat check
 4. **Calendar** – month/week view, add/edit/delete sa shared calendar
 
-Hindi isasama ang Gmail (desisyon: delikado kung makompromiso ang account).
+Gmail: pinag-iisipan pa (baka delikado kung makompromiso ang account). Nasa menu pa rin ang Email, pero walang
+koneksyon sa Gmail hangga't hindi napagpapasyahan; puwedeng idagdag sa susunod na phase.
 
 Roles: Admin, Encoder, Viewer. Admin at Encoder lang ang may Calendar.
 

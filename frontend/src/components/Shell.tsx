@@ -61,6 +61,7 @@ export function Shell() {
             </span>)}
         {hasRole('ADMIN', 'ENCODER') && <>
           <div className="grp">Google</div>
+          {item('/email', 'Email')}
           {item('/calendar', 'Calendar')}
         </>}
         {hasRole('ADMIN') && <>

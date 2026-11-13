@@ -12,6 +12,7 @@ const MODULES: Module[] = [
   { to: '/procurement', name: 'Procurement', text: 'Proposals, PRs, SPPMP, routing and budgets', color: '#7d3c98' },
 ];
 const GOOGLE: Module[] = [
+  { to: '/email', name: 'Email', text: 'Office inbox: read, label and print', color: '#c0392b', phase: 'Pinag-iisipan pa' },
   { to: '/calendar', name: 'Calendar', text: 'Shared calendar of the sections: add, edit and delete events', color: '#1e8449', phase: 'Phase 4' },
 ];
 

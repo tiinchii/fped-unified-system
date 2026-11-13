@@ -31,6 +31,12 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="travel-orders" element={<TravelPage />} />
         <Route path="procurement" element={<ProcurementPage />} />
+        <Route path="email" element={<Only roles={['ADMIN', 'ENCODER']}><ComingSoonPage title="Email" phase="a later phase (pinag-iisipan pa)" items={[
+          'Read the office inbox, with attachments',
+          'Add and remove labels, filter by label',
+          'Print an email',
+          'Make a calendar event from an email ("Gawing event")',
+        ]} /></Only>} />
         <Route path="calendar" element={<Only roles={['ADMIN', 'ENCODER']}><ComingSoonPage title="Calendar" phase="Phase 4" items={[
           'Month and week view of the shared calendar of the sections',
           'Add, edit and delete events; they show in Google Calendar too',
