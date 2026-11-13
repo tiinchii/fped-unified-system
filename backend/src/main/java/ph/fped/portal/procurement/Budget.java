@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import ph.fped.portal.travel.Office;
 
-/** The budget of an office for one year. The PRs received that year are deducted from it. */
+/** The budget of an office for one year. The PRs of that fiscal year are deducted from it. */
 @Entity
 @Table(name = "budgets")
 public class Budget {

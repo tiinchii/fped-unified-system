@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DocPills, RecLink, RepeatPill, TypeTag } from './bits';
+import { DocPills, EarlyPill, RecLink, RepeatPill, TypeTag } from './bits';
 import { useProc, type ListFilter } from './context';
 import {
-  activePrs, clusters, fmt, hasIncomplete, hasReview, isRepeat, money, PROC_LABEL, PROC_TYPES, prMissing, prState, whenWhere, yearOf,
+  activePrs, clusters, fmt, hasIncomplete, hasReview, isRepeat, money, PROC_LABEL, PROC_TYPES, prMissing, prState, whenWhere,
   type FullRecord, type Pr, type Rec,
 } from './model';
 
@@ -23,7 +23,10 @@ function DtsLine({ r }: { r: FullRecord }) {
 }
 
 export function Dashboard() {
-  const { m, showList, setTab } = useProc();
+  const { m, showList, setTab, reload } = useProc();
+  // early procurements already received for next year are in next year's list
+  const nextYear = m.year + 1;
+  const early = m.year === Number(m.today.slice(0, 4)) ? m.all.filter((r) => r.fiscalYear === nextYear && r.status !== 'CANCELLED').length : 0;
   const recs = m.records, active = recs.filter((r) => r.status !== 'CANCELLED');
   const review = active.filter(hasReview);
   const inc: { p: Pr; r: FullRecord }[] = [];
@@ -45,6 +48,8 @@ export function Dashboard() {
         {stat(over, 'Offices over budget', () => setTab('budget'), 'red')}
         {stat(recs.length - active.length, 'Cancelled', () => showList({ status: 'CANCELLED' }))}
       </div>
+      {early > 0 && <div className="alert info">May <b>{early}</b> early procurement para sa {nextYear}. Nasa listahan at budget ng {nextYear} ang mga ito.{' '}
+        <button type="button" className="link" onClick={() => void reload(nextYear)}>Tingnan ang {nextYear}</button></div>}
       <div className="two">
         <div>
           <h3>PR – incomplete / return to office</h3>
@@ -67,7 +72,7 @@ export function Dashboard() {
             {latest.length === 0 && <tr><td className="muted">None</td></tr>}
             {latest.map((r) => (
               <tr key={r.id}>
-                <td><RecLink id={r.id} code={r.code} /><div className="small muted">{fmt(r.dateReceived)}</div></td>
+                <td><RecLink id={r.id} code={r.code} /><div className="small muted">{fmt(r.dateReceived)}</div><EarlyPill r={r} /></td>
                 <td>{r.office}</td>
                 <td>{r.title}<TypeTag type={r.procType} /> <RepeatPill r={r} /><DtsLine r={r} /></td>
                 <td><DocPills r={m.recById.get(r.id)!} /></td>
@@ -142,7 +147,7 @@ export function RecordList() {
             const pr = activePrs(r).reduce((s, p) => s + p.amount, 0);
             return (
               <tr key={r.id} className={r.status === 'CANCELLED' ? 'cancelled' : ''}>
-                <td className="nowrap"><RecLink id={r.id} code={r.code} /><div className="small muted">{fmt(r.dateReceived)}</div></td>
+                <td className="nowrap"><RecLink id={r.id} code={r.code} /><div className="small muted">{fmt(r.dateReceived)}</div><EarlyPill r={r} /></td>
                 <td>{r.office}<div className="small muted">{r.preparedBy}</div></td>
                 <td><span className="ttl">{r.title}</span><TypeTag type={r.procType} />
                   {whenWhere(rec) && <div className="small muted">{whenWhere(rec)}</div>}
@@ -225,7 +230,7 @@ export function RepeatsTab() {
   const [cross, setCross] = useState(false);
   const groups = useMemo(() => clusters(m, cross), [m, cross]);
   const text = q.trim().toUpperCase();
-  const shown = groups.filter((g) => g.some((r) => yearOf(r) === m.year) && (officeId == null || g.some((r) => r.officeId === officeId))
+  const shown = groups.filter((g) => g.some((r) => r.fiscalYear === m.year) && (officeId == null || g.some((r) => r.officeId === officeId))
     && (!text || g.some((r) => (m.textsOf.get(r.id) ?? []).join(' ').toUpperCase().includes(text))))
     .sort((a, b) => b.length - a.length);
 
@@ -255,7 +260,7 @@ function Cluster({ g }: { g: Rec[] }) {
       <table className="stack"><tbody>
         {g.map((r) => (
           <tr key={r.id} className={r.status === 'CANCELLED' ? 'cancelled' : ''}>
-            <td className="nowrap"><RecLink id={r.id} code={r.code} /><div className="small muted">{fmt(r.dateReceived)}</div></td>
+            <td className="nowrap"><RecLink id={r.id} code={r.code} /><div className="small muted">{fmt(r.dateReceived)}</div><EarlyPill r={r} /></td>
             <td>{r.office}</td>
             <td><span className="ttl">{r.title}</span><TypeTag type={r.procType} />{whenWhere(r) && <div className="small muted">{whenWhere(r)}</div>}
               <div>{r.status === 'CANCELLED' && <span className="pill gone">Cancelled</span>}<RepeatPill r={r} /></div></td>

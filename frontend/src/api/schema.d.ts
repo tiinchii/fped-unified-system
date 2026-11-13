@@ -736,6 +736,8 @@ export interface components {
         SaveRecord: {
             /** Format: date */
             dateReceived?: string;
+            /** Format: int32 */
+            fiscalYear?: number;
             /** Format: int64 */
             officeId: number;
             preparedBy?: string;
@@ -836,6 +838,9 @@ export interface components {
             code: string;
             /** Format: date */
             dateReceived: string | null;
+            /** Format: int32 */
+            fiscalYear: number;
+            early: boolean;
             /** Format: int64 */
             officeId: number;
             office: string;
@@ -1128,6 +1133,9 @@ export interface components {
             code: string;
             /** Format: date */
             dateReceived: string | null;
+            /** Format: int32 */
+            fiscalYear: number;
+            early: boolean;
             /** Format: int64 */
             officeId: number;
             office: string;

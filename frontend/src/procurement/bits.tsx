@@ -18,6 +18,12 @@ export function DocPill({ name, status }: { name: string; status: DocStatus | nu
   return <span className={'pill ' + (status ? DOC_CLASS[status] : '')}>{name} · {status ? DOC_LABEL[status] : '—'}</span>;
 }
 
+/** Received before its fiscal year: e.g. received Nov 2026 for 2027. */
+export function EarlyPill({ r }: { r: { early: boolean; fiscalYear: number; dateReceived: string | null } }) {
+  if (!r.early) return null;
+  return <span className="pill early" title={'Natanggap ' + fmt(r.dateReceived) + ', para sa FY ' + r.fiscalYear}>Early · FY {r.fiscalYear}</span>;
+}
+
 export function RepeatPill({ r }: { r: Rec | FullRecord }) {
   const { m } = useProc();
   if (!isRepeat(r) || !r.repeatType) return null;

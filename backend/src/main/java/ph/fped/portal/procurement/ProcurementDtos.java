@@ -64,7 +64,8 @@ public final class ProcurementDtos {
     }
 
     /** A record with everything: its PRs (with SPPMP items) and its routing. */
-    public record RecordView(long id, String code, @Schema(nullable = true) LocalDate dateReceived, long officeId,
+    /** fiscalYear = the year whose funds it is for; early = received before that year. */
+    public record RecordView(long id, String code, @Schema(nullable = true) LocalDate dateReceived, int fiscalYear, boolean early, long officeId,
                              String office, String preparedBy, ProposalType proposalType, boolean withAtc,
                              ProcType procType, String title, String details, String venue,
                              @Schema(nullable = true) LocalDate startDate, @Schema(nullable = true) LocalDate endDate,
@@ -76,7 +77,7 @@ public final class ProcurementDtos {
                              String updatedBy, List<PrView> prs, List<RouteView> routing) {
 
         static RecordView of(Procurement r) {
-            return new RecordView(r.id, r.code, r.dateReceived, r.office.getId(), r.office.getName(), text(r.preparedBy),
+            return new RecordView(r.id, r.code, r.dateReceived, r.year(), r.isEarly(), r.office.getId(), r.office.getName(), text(r.preparedBy),
                     r.proposalType, r.withAtc, r.procType, r.title, text(r.details), text(r.venue), r.startDate, r.endDate,
                     r.amount, r.proposalStatus, r.atcStatus, text(r.dtsNo), text(r.logbookNo), r.status,
                     r.isCancelled() ? new CancelView(r.cancelledAt, text(r.cancelRequestedBy), text(r.cancelReason), text(r.cancelledBy)) : null,
@@ -94,19 +95,19 @@ public final class ProcurementDtos {
      * Short form of a record of another year: enough for the repeat check, the Repeated page and finding a
      * record by DTS. Opening one fetches its full details.
      */
-    public record LiteRecord(long id, String code, @Schema(nullable = true) LocalDate dateReceived, long officeId,
+    public record LiteRecord(long id, String code, @Schema(nullable = true) LocalDate dateReceived, int fiscalYear, boolean early, long officeId,
                              String office, String title, RecordStatus status, @Schema(nullable = true) RepeatType repeatType,
                              @Schema(nullable = true) Long repeatOfId, @Schema(nullable = true) LocalDate startDate,
                              @Schema(nullable = true) LocalDate endDate, ProcType procType, String dtsNo, List<LitePr> prs) {
 
         static LiteRecord of(Procurement r) {
-            return new LiteRecord(r.id, r.code, r.dateReceived, r.office.getId(), r.office.getName(), r.title, r.status,
+            return new LiteRecord(r.id, r.code, r.dateReceived, r.year(), r.isEarly(), r.office.getId(), r.office.getName(), r.title, r.status,
                     r.repeatType, r.repeatOf == null ? null : r.repeatOf.id, r.startDate, r.endDate, r.procType, text(r.dtsNo),
                     r.prs.stream().map(p -> new LitePr(p.id, p.code, text(p.dtsNo), p.status, p.title)).toList());
         }
     }
 
-    /** budget is empty when no budget was set; used = PRs received that year that are not cancelled. */
+    /** budget is empty when no budget was set; used = PRs of that fiscal year that are not cancelled. */
     public record BudgetLine(long officeId, String office, @Schema(nullable = true) BigDecimal budget, BigDecimal used, int prs) {}
 
     public record ProcurementData(List<RecordView> records, List<LiteRecord> otherYears, List<BudgetLine> budgets,
@@ -125,13 +126,15 @@ public final class ProcurementDtos {
      */
     public record ProposalResult(@Schema(nullable = true) RecordView record, List<Similar> similar, List<BudgetLine> budgets) {}
 
-    /** For the home page: this year's active records. */
+    /** For the home page: active records of this year and the early ones for next year. */
     public record ProcurementSummary(long forReview, long incompletePrs, long withoutPr) {}
 
     /* ---------- what the API accepts ---------- */
 
+    /** fiscalYear empty = the year received. */
     public record SaveRecord(
             LocalDate dateReceived,
+            Integer fiscalYear,
             @NotNull(message = "Office is required.") Long officeId,
             @Size(max = 150) String preparedBy,
             @NotNull(message = "Choose Activity Proposal, Project Proposal or None.") ProposalType proposalType,

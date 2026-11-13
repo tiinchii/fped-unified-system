@@ -115,8 +115,8 @@ public class ProcurementService {
     @Transactional(readOnly = true)
     public ProcurementSummary summary() {
         int year = TravelService.today().getYear();
-        List<Procurement> active = records.findOfYear(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31), "PROC-" + year + "-")
-                .stream().filter(r -> !r.isCancelled()).toList();
+        // this year's records and the early procurements already received for next year
+        List<Procurement> active = records.findFromYear(year).stream().filter(r -> !r.isCancelled()).toList();
         long forReview = active.stream().filter(ProcurementService::hasReview).count();
         long incomplete = active.stream().flatMap(r -> r.prs.stream()).filter(PurchaseRequest::isIncomplete).count();
         long withoutPr = active.stream().filter(r -> r.prs.stream().allMatch(PurchaseRequest::isCancelled)).count();
@@ -139,6 +139,12 @@ public class ProcurementService {
     public ProposalResult saveRecord(String actor, Long id, SaveRecord req, Integer shownYear) {
         String title = clean(req.title());
         LocalDate received = req.dateReceived() != null ? req.dateReceived() : TravelService.today();
+        // early procurement: received this year for next year's funds; a late one: received in January for last year
+        int fiscalYear = req.fiscalYear() != null ? req.fiscalYear() : received.getYear();
+        if (Math.abs(fiscalYear - received.getYear()) > 1) {
+            throw ApiException.badRequest("Para sa taon (FY) must be " + (received.getYear() - 1) + ", " + received.getYear()
+                    + " or " + (received.getYear() + 1) + " for a record received in " + received.getYear() + ".");
+        }
         ProcType type = req.procType();
         boolean hasProposal = req.proposalType() != ProposalType.NONE;
         BigDecimal amount = req.amount() == null ? BigDecimal.ZERO : req.amount();
@@ -189,10 +195,22 @@ public class ProcurementService {
 
         Instant now = Instant.now();
         boolean isNew = rec == null;
+        String oldCode = null;
         if (isNew) {
-            String prefix = "PROC-" + received.getYear() + "-";
-            rec = new Procurement(Codes.next(records.findCodesStartingWith(prefix), prefix, 5), actor, now);
+            rec = new Procurement(nextRecordCode(fiscalYear), actor, now);
+        } else if (rec.year() != fiscalYear) {
+            // the year in the ID is the fiscal year, so the record and its PRs get IDs of the new year
+            oldCode = rec.code;
+            rec.code = nextRecordCode(fiscalYear);
+            for (PurchaseRequest pr : rec.prs) {
+                String was = pr.code;
+                pr.code = nextPrCode(fiscalYear);
+                pr.remarks = addNote(pr.remarks, "Dating ID " + was + " (FY " + rec.year() + " → " + fiscalYear + ")", pr.code);
+                prs.saveAndFlush(pr);
+                audit.log(actor, "CHANGE_FY", pr.code, "was " + was);
+            }
         }
+        rec.fiscalYear = fiscalYear;
         rec.dateReceived = received;
         rec.office = office;
         rec.preparedBy = clean(req.preparedBy());
@@ -213,11 +231,12 @@ public class ProcurementService {
         rec.repeatOf = repeatOf;
         rec.repeatNote = repeatType == null ? null : clean(req.repeatNote());
         rec.remarks = clean(req.remarks()); // the edit form sends the remarks back whole, cancel/restore notes included
+        if (oldCode != null) rec.remarks = addNote(rec.remarks, "Dating ID " + oldCode + " (pinalitan ang FY)", rec.code);
         rec.touch(actor, now);
         records.saveAndFlush(rec);
 
         audit.log(actor, isNew ? "CREATE_RECORD" : "UPDATE_RECORD", rec.code,
-                title + "; " + type + "; " + req.proposalType() + (req.withAtc() ? " + ATC" : "")
+                title + "; FY " + fiscalYear + (oldCode == null ? "" : " (was " + oldCode + ")") + "; " + type + "; " + req.proposalType() + (req.withAtc() ? " + ATC" : "")
                         + (repeatType == null ? "" : "; " + repeatType + (repeatOf == null ? "" : " of " + repeatOf.code)));
         return new ProposalResult(RecordView.of(rec), List.of(), budgetLines(year(shownYear)));
     }
@@ -294,8 +313,7 @@ public class ProcurementService {
         Instant now = Instant.now();
         boolean isNew = pr == null;
         if (isNew) {
-            String prefix = "PR-" + req.dateReceived().getYear() + "-";
-            pr = new PurchaseRequest(Codes.next(prs.findCodesStartingWith(prefix), prefix, 5), rec, actor, now);
+            pr = new PurchaseRequest(nextPrCode(rec.year()), rec, actor, now);
             rec.prs.add(pr);
         }
         pr.dtsNo = clean(req.dtsNo());
@@ -510,7 +528,7 @@ public class ProcurementService {
     }
 
     /**
-     * Budget, used amount and number of PRs per office for a year. Used = PRs received that year that are not
+     * Budget, used amount and number of PRs per office for a year. Used = PRs of that fiscal year that are not
      * cancelled and whose record is not cancelled. Offices with neither a budget nor a PR are left out.
      */
     private List<BudgetLine> budgetLines(int year) {
@@ -535,6 +553,17 @@ public class ProcurementService {
     }
 
     /* ======================== helpers ======================== */
+
+    /** PROC-2027-00001: the year is the fiscal year; numbering starts again at 00001 each year. */
+    private String nextRecordCode(int fiscalYear) {
+        String prefix = "PROC-" + fiscalYear + "-";
+        return Codes.next(records.findCodesStartingWith(prefix), prefix, 5);
+    }
+
+    private String nextPrCode(int fiscalYear) {
+        String prefix = "PR-" + fiscalYear + "-";
+        return Codes.next(prs.findCodesStartingWith(prefix), prefix, 5);
+    }
 
     private RecordResult result(Procurement rec, Integer shownYear) {
         records.flush();

@@ -236,3 +236,6 @@ table.items input { min-width: 0; } table.items td.num input { text-align: right
 .checklist .f { width: 100%; margin-top: 0; }
 .checklist .chk.missing { color: var(--amber); }
 .pill { white-space: nowrap; }
+/* early procurement: received before its fiscal year */
+.pill.early { background: var(--amberbg); color: var(--amber); }
+.fyhint { color: var(--amber); margin-top: 4px; }

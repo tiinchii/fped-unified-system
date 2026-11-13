@@ -3,13 +3,14 @@ import { api, errorMessage, unwrap } from '../api/client';
 import { NoticeBox, SimilarItem } from './bits';
 import { useProc } from './context';
 import {
-  contractLength, DOC_LABEL, DOC_STATUSES, findSimilar, ITEM_LABEL, PROC_LABEL, PROC_TYPES, PROPOSAL_LABEL, REPEAT_LABEL, REPEAT_TYPES,
+  contractLength, DOC_LABEL, fiscalYearChoices, DOC_STATUSES, findSimilar, ITEM_LABEL, PROC_LABEL, PROC_TYPES, PROPOSAL_LABEL, REPEAT_LABEL, REPEAT_TYPES,
   type DocStatus, type FullRecord, type ProcType, type ProposalType, type RepeatType, type Similar,
 } from './model';
 
 interface Form {
   id: number | null; imported: boolean;
-  dateReceived: string; officeId: number | null; preparedBy: string; dtsNo: string; logbookNo: string;
+  /** null = the year of the date received */
+  dateReceived: string; fiscalYear: number | null; officeId: number | null; preparedBy: string; dtsNo: string; logbookNo: string;
   procType: ProcType | null; proposalType: ProposalType; proposalStatus: DocStatus; withAtc: boolean; atcStatus: DocStatus;
   title: string; venue: string; start: string; end: string; cStart: string; cEnd: string; details: string; amount: string;
   repeatType: RepeatType | null; repeatOfId: number | null; repeatNote: string; remarks: string;
@@ -17,7 +18,7 @@ interface Form {
 
 function empty(today: string): Form {
   return {
-    id: null, imported: false, dateReceived: today, officeId: null, preparedBy: '', dtsNo: '', logbookNo: '',
+    id: null, imported: false, dateReceived: today, fiscalYear: null, officeId: null, preparedBy: '', dtsNo: '', logbookNo: '',
     procType: null, proposalType: 'ACTIVITY_PROPOSAL', proposalStatus: 'FOR_REVIEW', withAtc: true, atcStatus: 'FOR_REVIEW',
     title: '', venue: '', start: '', end: '', cStart: '', cEnd: '', details: '', amount: '',
     repeatType: null, repeatOfId: null, repeatNote: '', remarks: '',
@@ -27,7 +28,7 @@ function empty(today: string): Form {
 function fromRecord(r: FullRecord): Form {
   const event = r.procType === 'EVENT';
   return {
-    id: r.id, imported: !!r.source, dateReceived: r.dateReceived ?? '', officeId: r.officeId, preparedBy: r.preparedBy, dtsNo: r.dtsNo,
+    id: r.id, imported: !!r.source, dateReceived: r.dateReceived ?? '', fiscalYear: r.fiscalYear, officeId: r.officeId, preparedBy: r.preparedBy, dtsNo: r.dtsNo,
     logbookNo: r.logbookNo, procType: r.procType, proposalType: r.proposalType, proposalStatus: r.proposalStatus ?? 'FOR_REVIEW',
     withAtc: r.withAtc, atcStatus: r.atcStatus ?? 'FOR_REVIEW', title: r.title, venue: r.venue,
     start: event ? r.startDate ?? '' : '', end: event ? r.endDate ?? '' : '', cStart: event ? '' : r.startDate ?? '', cEnd: event ? '' : r.endDate ?? '',
@@ -108,6 +109,11 @@ export function RecordForm() {
 
   const hint = !f.procType ? 'Piliin kung anong klaseng procurement.' : mustAnswer && !f.repeatType ? 'Sagutin muna kung repeat ba ito.' : '';
 
+  // the year whose funds this is for; follows the date received until it is changed
+  const fyChoices = fiscalYearChoices(f.dateReceived, m.today);
+  const fy = f.fiscalYear != null && fyChoices.includes(f.fiscalYear) ? f.fiscalYear : fyChoices[1]!;
+  const fyMoved = editing != null && editing.fiscalYear !== fy;
+
   async function save() {
     const err = check(f);
     if (err) { setNotice({ kind: 'bad', text: err }); return; }
@@ -115,7 +121,7 @@ export function RecordForm() {
     setBusy(true); setNotice(null);
     const hire = f.procType === 'HIRING';
     const body = {
-      dateReceived: f.dateReceived, officeId: f.officeId, preparedBy: f.preparedBy, proposalType: f.proposalType, withAtc: f.withAtc,
+      dateReceived: f.dateReceived, fiscalYear: fy, officeId: f.officeId, preparedBy: f.preparedBy, proposalType: f.proposalType, withAtc: f.withAtc,
       procType: f.procType, title: f.title, details: item ? f.details : '', venue: f.venue,
       startDate: (hire ? f.cStart : f.start) || undefined, endDate: (hire ? f.cEnd : f.end || f.start) || undefined,
       amount: f.amount === '' ? undefined : Number(f.amount),
@@ -136,7 +142,8 @@ export function RecordForm() {
         return;
       }
       applyRecord(res.record, res.budgets);
-      toast((f.id == null ? 'Saved ' : 'Updated ') + res.record.code);
+      toast((f.id == null ? 'Saved ' : 'Updated ') + res.record.code
+        + (res.record.fiscalYear !== m.year ? ` — nasa listahan ng ${res.record.fiscalYear} (piliin ang ${res.record.fiscalYear} sa itaas)` : ''));
       setF(empty(m.today)); setFromServer(null); setTypedTitle('');
       viewRecord(res.record.id);
     } catch (e) {
@@ -159,6 +166,14 @@ export function RecordForm() {
         <h3><span className="step">1</span> Proposal</h3>
         <div className="grid">
           <div><label className="f" htmlFor="fReceived">Date received *</label><input id="fReceived" type="date" value={f.dateReceived} onChange={(e) => set({ dateReceived: e.target.value })} /></div>
+          <div><label className="f" htmlFor="fFy">Para sa taon (FY) *</label>
+            <select id="fFy" value={fy} onChange={(e) => set({ fiscalYear: Number(e.target.value) })}>
+              {fyChoices.map((y, i) => <option key={y} value={y}>{y}{i === 2 ? ' — early procurement' : i === 0 ? ' — para sa nakaraang taon' : ''}</option>)}
+            </select>
+            {fy !== fyChoices[1] && <div className="small fyhint">{fy > fyChoices[1]!
+              ? <>Early procurement: nasa listahan ng <b>{fy}</b> at sa <b>{fy}</b> budget ibabawas ang PR.</>
+              : <>Nasa listahan ng <b>{fy}</b> at sa <b>{fy}</b> budget ibabawas ang PR.</>}</div>}
+            {fyMoved && <div className="small fyhint">Magiging ID ng {fy} ang {editing.code} at ang mga PR nito.</div>}</div>
           <div><label className="f" htmlFor="fOffice">Office *</label>
             <select id="fOffice" value={f.officeId ?? ''} onChange={(e) => { set({ officeId: e.target.value ? Number(e.target.value) : null }); setFromServer(null); }}>
               <option value="">— select —</option>

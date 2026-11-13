@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { api, errorMessage, unwrap } from '../api/client';
 import { Modal } from '../components/Modal';
-import { DocPill, RecLink, RepeatPill, SimilarItem, StateLabel, TypeTag } from './bits';
+import { DocPill, EarlyPill, RecLink, RepeatPill, SimilarItem, StateLabel, TypeTag } from './bits';
 import { useProc } from './context';
 import {
   contractLength, fmt, fmtDT, findSimilar, hasProposal, isRepeat, money, PROC_LABEL, PROPOSAL_LABEL, prMissing, prTotal, range,
@@ -139,6 +139,7 @@ export function RecordView({ r, onClose }: { r: FullRecord; onClose(): void }) {
           <Kv k="Office">{r.office}</Kv>
           <Kv k="Prepared by">{r.preparedBy}</Kv>
           <Kv k="Date received">{fmt(r.dateReceived)}</Kv>
+          <Kv k="Para sa taon (FY)">{r.fiscalYear} <EarlyPill r={r} /></Kv>
           <Kv k="Documents">
             <div>{hasProposal(r) ? <DocPill name={PROPOSAL_LABEL[r.proposalType]} status={r.proposalStatus} /> : <span className="muted">Walang proposal (PR lang)</span>}</div>
             {r.withAtc && <div><DocPill name="Authority to Conduct" status={r.atcStatus} /></div>}

@@ -18,7 +18,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import ph.fped.portal.common.Codes;
 import ph.fped.portal.procurement.Enums.DocStatus;
 import ph.fped.portal.procurement.Enums.Facility;
 import ph.fped.portal.procurement.Enums.Plan;
@@ -35,7 +34,7 @@ public class PurchaseRequest {
     Long id;
 
     /** PR-2027-00001 */
-    @Column(nullable = false, unique = true, length = 20, updatable = false)
+    @Column(nullable = false, unique = true, length = 20)
     String code;
 
     @ManyToOne(optional = false)
@@ -148,8 +147,9 @@ public class PurchaseRequest {
         return status == RecordStatus.CANCELLED;
     }
 
+    /** The fiscal year of its procurement: the budget it is deducted from. */
     int year() {
-        return dateReceived != null ? dateReceived.getYear() : Codes.yearOf(code);
+        return procurement.year();
     }
 
     /**

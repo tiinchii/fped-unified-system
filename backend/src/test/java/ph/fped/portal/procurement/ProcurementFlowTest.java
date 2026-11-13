@@ -118,7 +118,7 @@ class ProcurementFlowTest {
     }
 
     @Test
-    void recordsAndPrsAreNumberedPerYearOfTheDateReceived() throws Exception {
+    void recordsAndPrsAreNumberedPerFiscalYear() throws Exception {
         JsonNode a = saved(event("Risk Management Enhancement Training", frmd));
         JsonNode b = saved(event("Hatchery Operators Summit", frmd));
         assertThat(a.get("code").asText()).isEqualTo("PROC-2027-00001");
@@ -221,12 +221,15 @@ class ProcurementFlowTest {
         assertThat(two.get("budgets").get(0).get("prs").asInt()).isEqualTo(2);
         long prB = two.get("record").get("prs").get(1).get("id").asLong();
 
-        // a PR received in another year counts in that year
+        // a PR follows the fiscal year of its procurement, even when it is received the next January
         Map<String, Object> next = pr("PR-C", 999);
         next.put("dateReceived", "2028-01-05");
         JsonNode three = addPr(rec, next);
-        assertThat(three.get("record").get("prs").get(2).get("code").asText()).isEqualTo("PR-2028-00001");
-        assertThat(three.get("budgets").get(0).get("used").decimalValue()).isEqualByComparingTo("520000.50");
+        assertThat(three.get("record").get("prs").get(2).get("code").asText()).isEqualTo("PR-2027-00003");
+        assertThat(three.get("budgets").get(0).get("used").decimalValue()).isEqualByComparingTo("520999.50");
+        long prC = three.get("record").get("prs").get(2).get("id").asLong();
+        send(post("/api/procurement/prs/" + prC + "/cancel").param("year", "2027"), enc,
+                Map.of("date", "2027-03-05", "requestedBy", "Dir. Santos", "reason", "Wrong")).andExpect(status().isOk());
 
         Map<String, Object> cancel = Map.of("date", "2027-03-05", "time", "15:51", "requestedBy", "Dir. Santos", "reason", "Moved to next quarter");
         JsonNode cancelled = read(send(post("/api/procurement/prs/" + prB + "/cancel").param("year", "2027"), enc, cancel).andExpect(status().isOk()));
@@ -251,6 +254,52 @@ class ProcurementFlowTest {
         // removing the budget keeps the use
         send(put("/api/procurement/budgets"), enc, Map.of("year", 2027, "officeId", frmd)).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].budget").isEmpty()).andExpect(jsonPath("$[0].prs").value(1));
+    }
+
+    @Test
+    void anEarlyProcurementBelongsToNextYear() throws Exception {
+        send(put("/api/procurement/budgets"), enc, Map.of("year", 2027, "officeId", frmd, "amount", 500000)).andExpect(status().isOk());
+        Map<String, Object> early = event("Hatchery Operators Summit", frmd);
+        early.put("dateReceived", "2026-11-13");
+        early.put("fiscalYear", 2027);
+        JsonNode rec = saved(early);
+        assertThat(rec.get("code").asText()).isEqualTo("PROC-2027-00001");
+        assertThat(rec.get("fiscalYear").asInt()).isEqualTo(2027);
+        assertThat(rec.get("early").asBoolean()).isTrue();
+        long id = rec.get("id").asLong();
+
+        Map<String, Object> body = pr("PR27-1", 100000);
+        body.put("dateReceived", "2026-11-20");
+        JsonNode withPr = addPr(id, body);
+        assertThat(withPr.get("record").get("prs").get(0).get("code").asText()).isEqualTo("PR-2027-00001");
+        assertThat(withPr.get("budgets").get(0).get("used").decimalValue()).isEqualByComparingTo("100000"); // 2027 budget
+
+        // listed in 2027, not in 2026
+        mvc.perform(get("/api/procurement/data").param("year", "2027").session(enc)).andExpect(jsonPath("$.records.length()").value(1));
+        mvc.perform(get("/api/procurement/data").param("year", "2026").session(enc))
+                .andExpect(jsonPath("$.records.length()").value(0)).andExpect(jsonPath("$.otherYears[0].fiscalYear").value(2027));
+
+        // at most a year apart from the date received
+        early.put("fiscalYear", 2028);
+        send(put("/api/procurement/records/" + id).param("year", "2027"), enc, early).andExpect(status().isBadRequest());
+
+        // set to 2026 by mistake: changing the FY gives the record and its PRs IDs of the new year
+        Map<String, Object> mistake = event("Seaweed Farmers Forum", frmd);
+        mistake.put("dateReceived", "2026-11-13");
+        JsonNode wrong = saved(mistake);
+        assertThat(wrong.get("code").asText()).isEqualTo("PROC-2026-00001");
+        assertThat(wrong.get("early").asBoolean()).isFalse();
+        long wrongId = wrong.get("id").asLong();
+        Map<String, Object> wrongPr = pr("PR26-9", 5000);
+        wrongPr.put("dateReceived", "2026-11-14");
+        assertThat(addPr(wrongId, wrongPr).get("record").get("prs").get(0).get("code").asText()).isEqualTo("PR-2026-00001");
+        mistake.put("fiscalYear", 2027);
+        mistake.put("repeatType", "DIFFERENT");
+        JsonNode fixed = read(send(put("/api/procurement/records/" + wrongId).param("year", "2027"), enc, mistake).andExpect(status().isOk()));
+        assertThat(fixed.get("record").get("code").asText()).isEqualTo("PROC-2027-00002");
+        assertThat(fixed.get("record").get("remarks").asText()).isEqualTo("Dating ID PROC-2026-00001 (pinalitan ang FY)");
+        assertThat(fixed.get("record").get("prs").get(0).get("code").asText()).isEqualTo("PR-2027-00002");
+        assertThat(fixed.get("budgets").get(0).get("used").decimalValue()).isEqualByComparingTo("105000");
     }
 
     @Test

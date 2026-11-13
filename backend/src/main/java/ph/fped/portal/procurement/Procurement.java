@@ -41,12 +41,16 @@ public class Procurement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    /** PROC-2027-00001 */
-    @Column(nullable = false, unique = true, length = 20, updatable = false)
+    /** PROC-2027-00001; the year is the fiscal year, so the ID changes when the fiscal year is changed. */
+    @Column(nullable = false, unique = true, length = 20)
     String code;
 
     @Column(name = "date_received")
     LocalDate dateReceived;
+
+    /** The year whose funds this is for: the year received, or next year for an early procurement. */
+    @Column(name = "fiscal_year", nullable = false)
+    int fiscalYear;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "office_id", nullable = false)
@@ -170,9 +174,14 @@ public class Procurement {
         return status == RecordStatus.CANCELLED;
     }
 
-    /** Year received, or the year in the code for a row without a date. */
+    /** The fiscal year: the list it is shown in and the budget its PRs are deducted from. */
     int year() {
-        return dateReceived != null ? dateReceived.getYear() : Codes.yearOf(code);
+        return fiscalYear != 0 ? fiscalYear : dateReceived != null ? dateReceived.getYear() : Codes.yearOf(code);
+    }
+
+    /** Received before the year whose funds it is for (e.g. received Nov 2026 for 2027). */
+    boolean isEarly() {
+        return dateReceived != null && dateReceived.getYear() < year();
     }
 
     public Long getId() { return id; }

@@ -18,7 +18,7 @@ export type Facility = NonNullable<Pr['facility']>;
 
 /** A record of any year: full details for the selected year, a short form for the others (full is then empty). */
 export interface Rec {
-  id: number; code: string; dateReceived: string | null; officeId: number; office: string; title: string;
+  id: number; code: string; dateReceived: string | null; fiscalYear: number; early: boolean; officeId: number; office: string; title: string;
   status: FullRecord['status']; repeatType: RepeatType | null; repeatOfId: number | null; startDate: string | null;
   endDate: string | null; procType: ProcType; dtsNo: string;
   prs: { id: number; code: string; dtsNo: string; status: Pr['status']; title: string }[];
@@ -94,9 +94,13 @@ const MONEY = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximum
 export function money(n: number | null | undefined): string { return MONEY.format(Number(n) || 0); }
 export function peso(n: number): string { return (n < 0 ? '-₱' : '₱') + money(Math.abs(n)); }
 
-/** Year received, or the year in the code (PROC-2027-00001) for a row without a date. Same rule as the server. */
-export function yearOf(r: { dateReceived: string | null; code: string }): number {
-  return Number(r.dateReceived ? r.dateReceived.slice(0, 4) : (/-(\d{4})-/.exec(r.code) ?? [])[1] ?? 0);
+/**
+ * The years a record received on this date can be for: the year itself, next year (early procurement,
+ * e.g. received November for next year's funds) and last year (received in January for last year's).
+ */
+export function fiscalYearChoices(dateReceived: string, today: string): number[] {
+  const y = Number((dateReceived || today).slice(0, 4));
+  return [y - 1, y, y + 1];
 }
 
 export function activePrs(r: FullRecord): Pr[] { return r.prs.filter((p) => p.status !== 'CANCELLED'); }

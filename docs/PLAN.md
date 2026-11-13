@@ -13,6 +13,11 @@ Natitira sa Phase 2 at 3:
 - Paghahambing sa lumang system gamit ang totoong data (overlap check, incomplete PRs, budget totals): gagawin
   kasabay ng test import (Phase 5). Ang rules ay kinopya mula sa `legacy/apps-script/` at may tests sa
   `backend/src/test/.../travel` at `.../procurement`.
+- Early procurement (hal. natanggap Nob 2026 para sa pondo ng 2027): may **Para sa taon (FY)** na sa proposal.
+  Naka-default ito sa taon ng Date received, at babaguhin lang kapag early. Ang FY ang sinusunod ng listahan,
+  ng budget na pagbabawasan ng PR, at ng ID (`PROC-2027-…`, `PR-2027-…`). Kapag binago ang FY, nagkakaroon ng ID ng
+  bagong taon ang record at ang mga PR nito, at nakasulat sa Remarks ang dating ID. Sa import (Phase 5), ang FY ng
+  lumang records ay ang taon ng Date received.
 - Pagtutugma ng offices na iba ang baybay sa dalawang lumang system (hal. ADJU at ADJUDICATION, ENGR at ENGINEERING,
   LIB at LIBRARY): gagawin sa import (Phase 5).
 

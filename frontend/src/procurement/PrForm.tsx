@@ -84,7 +84,7 @@ export function PrForm() {
             {hits.map((r) => (
               <li key={r.id} className="pick" role="button" tabIndex={0} onClick={() => void open(r.id, null)} onKeyDown={(e) => { if (e.key === 'Enter') void open(r.id, null); }}>
                 <b>{r.code}</b> · {r.title}<TypeTag type={r.procType} />
-                <div className="small muted">{r.office} · received {fmt(r.dateReceived)}{r.dtsNo && ' · DTS ' + r.dtsNo}{whenWhere(r) && ' · ' + whenWhere(r)}</div>
+                <div className="small muted">{r.office} · FY {r.fiscalYear} · received {fmt(r.dateReceived)}{r.dtsNo && ' · DTS ' + r.dtsNo}{whenWhere(r) && ' · ' + whenWhere(r)}</div>
                 <div>{r.status === 'CANCELLED' && <span className="pill gone">Cancelled</span>}<DocPills r={r} /></div>
               </li>
             ))}
@@ -108,10 +108,10 @@ export function PrForm() {
   const dts = f.dtsNo.trim().toUpperCase();
   const dup = dts ? m.all.flatMap((x) => x.prs.map((p) => ({ p, x }))).find(({ p }) => p.id !== prId && p.status !== 'CANCELLED' && p.dtsNo.toUpperCase() === dts) : undefined;
 
-  // budget of the office for the year of the PR
-  const prYear = Number((f.dateReceived || m.today).slice(0, 4)), amt = Number(f.amount) || 0;
+  // budget of the office for the fiscal year of the procurement (an early procurement: next year's)
+  const prYear = r.fiscalYear, amt = Number(f.amount) || 0;
   const b = m.budgetOf.get(r.officeId);
-  const oldAmount = editingPr && editingPr.status !== 'CANCELLED' && (editingPr.dateReceived ?? '').startsWith(String(m.year)) ? editingPr.amount : 0;
+  const oldAmount = editingPr && editingPr.status !== 'CANCELLED' ? editingPr.amount : 0;
 
   async function save() {
     if (!f) return;
@@ -153,7 +153,7 @@ export function PrForm() {
           <div>
             <div className="muted small">PARA SA</div>
             <b><RecLink id={r.id} code={r.code} /></b> · {r.title}<TypeTag type={r.procType} />
-            <div className="small muted">{r.office} · received {fmt(r.dateReceived)}{r.dtsNo && ' · DTS ' + r.dtsNo}
+            <div className="small muted">{r.office} · FY {r.fiscalYear} · received {fmt(r.dateReceived)}{r.dtsNo && ' · DTS ' + r.dtsNo}
               {whenWhere(m.recById.get(r.id)!) && ' · ' + whenWhere(m.recById.get(r.id)!)}{r.amount ? ' · ₱' + money(r.amount) : ''}</div>
             <div><DocPills r={m.recById.get(r.id)!} /></div>
           </div>

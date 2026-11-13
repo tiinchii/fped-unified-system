@@ -87,11 +87,11 @@ export function ProcurementPage() {
       applyRecord: (record, budgets) => {
         setData((d) => {
           if (!d) return d;
-          const inYear = d.records.some((r) => r.id === record.id) || (record.dateReceived ?? record.code.split('-')[1] ?? '').startsWith(String(d.year));
+          const inYear = record.fiscalYear === d.year;
           if (!inYear) {
-            // a record of another year: keep it in full beside the short forms
+            // a record of another year (or moved to another fiscal year): keep it in full beside the short forms
             setFetched((f) => new Map(f).set(record.id, record));
-            return { ...d, budgets: budgets ?? d.budgets, otherYears: d.otherYears.some((l) => l.id === record.id) ? d.otherYears : [...d.otherYears, { ...record, prs: [] }] };
+            return { ...d, budgets: budgets ?? d.budgets, records: d.records.filter((r) => r.id !== record.id), otherYears: d.otherYears.some((l) => l.id === record.id) ? d.otherYears : [...d.otherYears, { ...record, prs: [] }] };
           }
           const records = d.records.some((r) => r.id === record.id) ? d.records.map((r) => (r.id === record.id ? record : r)) : [...d.records, record];
           return { ...d, records, otherYears: d.otherYears.filter((l) => l.id !== record.id), budgets: budgets ?? d.budgets };
