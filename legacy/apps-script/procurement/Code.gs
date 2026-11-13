@@ -11,7 +11,11 @@
  *   3. SPPMP items of a PR (activity / item / description + amount), encoded when the papers come back from the office
  *   4. Routing   – to whom the papers went / who reviewed them, with date and time
  * Cancelling a record or a PR keeps the date, time and the person who asked for it. A new PR can point to
- * the cancelled PR it replaces. PR amounts are deducted from the budget of the office for the year.
+ * the cancelled PR it replaces. PR amounts are deducted from the budget of the office for the fiscal year.
+ *
+ * Fiscal year (FY): the year whose funds a record is for. Usually the year received, but an early procurement
+ * (received November 2026 for 2027) is for next year: it is listed in 2027, its PRs are deducted from the 2027
+ * budget and its IDs are PROC-2027-… / PR-2027-…. Rows without a Fiscal Year use the year received.
  *
  * Sheets (created by Setup):
  *   Procurements – one row per record (step 1)
@@ -46,7 +50,7 @@ const HEADERS = {
     'Title', 'Venue', 'Start', 'End', 'Amount', 'Proposal Status', 'ATC Status', 'DTS No.', 'Logbook No.']
     .concat(CANCEL_COLS, ['Repeat Type', 'Repeat Of', 'Repeat Note', 'Remarks', 'Source', 'Encoded By', 'Encoded At',
       'Updated At', 'Updated By',
-      'Item Details']), // added later: new columns go at the end so the sheets already in use keep their columns
+      'Item Details', 'Fiscal Year']), // added later: new columns go at the end so the sheets already in use keep their columns
   PRs: ['PR ID', 'Record ID', 'DTS No.', 'Date Received', 'PR Date', 'Requisitioner', 'Title', 'Venue', 'Start', 'End',
     'Amount', 'Plan', 'SPPMP Justification', 'Facility', 'Facility Justification', 'PR Status']
     .concat(CANCEL_COLS, ['Replaces PR', 'Remarks', 'Source', 'Encoded By', 'Encoded At', 'Updated At', 'Updated By']),
@@ -270,6 +274,7 @@ function import2026() {
       const id = nextId('PROC', r.received);
       const row = new Array(HEADERS.Procurements.length).fill('');
       row[C['Record ID']] = id; row[C['Date Received']] = r.received || ''; row[C.Office] = r.office;
+      row[C['Fiscal Year']] = r.received ? r.received.getFullYear() : 2026;
       row[C['Prepared By']] = r.preparedBy; row[C.Title] = r.title; row[C.Amount] = r.amount || '';
       row[C['Proposal Type']] = r.ap ? 'Activity Proposal' : 'None'; row[C['Proposal Status']] = r.ap || '';
       row[C['With ATC']] = r.atc ? 'Yes' : 'No'; row[C['ATC Status']] = r.atc || '';
@@ -638,20 +643,21 @@ function dataFor_(user, year) {
   const today = iso_(new Date());
   year = parseInt(year, 10) || parseInt(today.slice(0, 4), 10);
   const ver = dataVersion_();
-  let full = cacheGetBig_(`apf_${ver}_${year}`), lite = cacheGetBig_(`apl_${ver}`);
+  // "2": the short form got the fiscal year, so copies cached by the older version are not used
+  let full = cacheGetBig_(`apf2_${ver}_${year}`), lite = cacheGetBig_(`apl2_${ver}`);
   if (!full || !lite) {
     const all = loadAll_();
     full = {
-      records: all.recs.filter(r => yearOf_(r) === year).map(r => slim_(fullRecord_(r, all))),
+      records: all.recs.filter(r => fyOf_(r) === year).map(r => slim_(fullRecord_(r, all))),
       budgets: budgetSummary_(year, all),
     };
     lite = all.recs.map(r => liteRow_(r, all.prsByRec[String(r[0])] || []));
-    cachePutBig_(`apf_${ver}_${year}`, full);
-    cachePutBig_(`apl_${ver}`, lite);
+    cachePutBig_(`apf2_${ver}_${year}`, full);
+    cachePutBig_(`apl2_${ver}`, lite);
   }
   const offices = rows_(SHEETS.settings).map(r => String(r[0]).trim()).filter(String);
   // the selected year is already in full, so its short form is not sent again
-  const otherYears = lite.filter(a => parseInt(a[1] ? a[1].slice(0, 4) : (/-(\d{4})-/.exec(a[0]) || [0, 0])[1], 10) !== year);
+  const otherYears = lite.filter(a => a[12] !== year);
   return { records: full.records, budgets: full.budgets, lite: otherYears, year, offices, user, today,
     docStatus: DOC_STATUS, proposalTypes: PROPOSAL_TYPES, procTypes: PROC_TYPES, routeActions: ROUTE_ACTIONS,
     repeatTypes: REPEAT_TYPES, usersShared: !!linkedUsersId_() };
@@ -692,22 +698,27 @@ function oneRecord_(id) {
     rows_(SHEETS.routing).filter(x => String(x[R['Record ID']]) === String(r[0])).map(routeObj_));
 }
 
-/** Year received, or the year in the ID (PROC-2027-00001) for imported rows without a date. Same rule as inYear() in Index.html. */
+/** Year received, or the year in the ID (PROC-2027-00001) for imported rows without a date. */
 function yearOf_(r) {
   const d = iso_(r[1]);
   return parseInt(d ? d.slice(0, 4) : (/-(\d{4})-/.exec(String(r[0])) || [0, 0])[1], 10);
 }
 
+/** Fiscal year of a record (Procurements row): the Fiscal Year column, or the year received for older rows. */
+function fyOf_(r) {
+  return parseInt(r[C['Fiscal Year']], 10) || yearOf_(r);
+}
+
 /**
  * Short form of a record, as an array to keep it small:
- * [id, received, office, title, status, repeatType, repeatOf, start, end, procType, dts, [[prId, prDts, 'A'|'C', prTitle], …]]
+ * [id, received, office, title, status, repeatType, repeatOf, start, end, procType, dts, [[prId, prDts, 'A'|'C', prTitle], …], fiscalYear]
  * Index.html expands it (expandLite).
  */
 function liteRow_(r, prRows) {
   return [String(r[0]), iso_(r[C['Date Received']]), String(r[C.Office]), String(r[C.Title]),
     String(r[C.Status] || 'Active'), String(r[C['Repeat Type']]), String(r[C['Repeat Of']]),
     iso_(r[C.Start]), iso_(r[C.End]), String(r[C['Procurement Type']]), String(r[C['DTS No.']]),
-    prRows.map(p => [String(p[0]), String(p[P['DTS No.']]), String(p[P.Status]) === 'Cancelled' ? 'C' : 'A', String(p[P.Title])])];
+    prRows.map(p => [String(p[0]), String(p[P['DTS No.']]), String(p[P.Status]) === 'Cancelled' ? 'C' : 'A', String(p[P.Title])]), fyOf_(r)];
 }
 
 /** Leaves out empty values ('' / null / false / []) to make the payload smaller; Index.html puts them back (fill). */
@@ -775,7 +786,7 @@ function cancelObj_(r, col) {
 
 function recordObj_(r, prs, routing) {
   return {
-    id: String(r[C['Record ID']]), received: iso_(r[C['Date Received']]), office: String(r[C.Office]),
+    id: String(r[C['Record ID']]), received: iso_(r[C['Date Received']]), fy: fyOf_(r), office: String(r[C.Office]),
     preparedBy: String(r[C['Prepared By']]), proposalType: String(r[C['Proposal Type']] || 'None'),
     withATC: isYes_(r[C['With ATC']]), procType: String(r[C['Procurement Type']]), title: String(r[C.Title]),
     venue: String(r[C.Venue]), start: iso_(r[C.Start]), end: iso_(r[C.End]), amount: Number(r[C.Amount]) || 0,
@@ -813,16 +824,23 @@ function routeObj_(x) {
 
 /**
  * Creates or updates a record (step 1).
- * p = { id?, received, office, preparedBy, proposalType, withATC, procType, title, details, venue, start, end, amount,
+ * p = { id?, received, fy, office, preparedBy, proposalType, withATC, procType, title, details, venue, start, end, amount,
  *       proposalStatus, atcStatus, dts, logbook, remarks, repeatType?, repeatOf?, repeatNote? }
+ * fy = fiscal year: the year received (default), next year for an early procurement, or last year.
+ * Changing the fiscal year of a saved record gives it and its PRs IDs of the new year (see renumber_).
  * Returns { ok: true, record } or { ok: false, similar: [...] } when the title looks like an earlier
  * record of the same office and the encoder has not said yet whether it is a repeat.
  */
 function saveProposal(token, p) {
+  const t0 = Date.now();
   const user = auth_(token, ['Admin', 'Encoder']);
   const title = clean_(p.title);
   const received = p.received ? parseIso_(p.received) : new Date();
   if (!received) throw new Error('Invalid date received.');
+  const receivedYear = received.getFullYear(), fy = parseInt(p.fy, 10) || receivedYear;
+  if (Math.abs(fy - receivedYear) > 1) {
+    throw new Error(`Para sa taon (FY) must be ${receivedYear - 1}, ${receivedYear} or ${receivedYear + 1} for a record received in ${receivedYear}.`);
+  }
   if (!p.office) throw new Error('Office is required.');
   if (!title) throw new Error('Title is required.');
   if (PROC_TYPES.indexOf(p.procType) < 0) throw new Error('Choose the kind of procurement.');
@@ -851,6 +869,7 @@ function saveProposal(token, p) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
+    const all = rows_(SHEETS.recs); // read once: the look-alike check needs every row, and the row is then found without another call
     let row, old = null, id = p.id;
     if (id) {
       row = findRow_(SHEETS.recs, id);
@@ -864,7 +883,6 @@ function saveProposal(token, p) {
       if (!clean_(p.dts)) throw new Error('DTS No. is required.');
       if (!clean_(p.logbook)) throw new Error('Logbook No. (G#) is required.');
     }
-    const all = rows_(SHEETS.recs);
     const repeatType = REPEAT_TYPES.indexOf(p.repeatType) >= 0 ? p.repeatType : '';
     // only a look-alike from the same office has to be answered (other offices are shown for information);
     // once the encoder has answered, the check is not needed
@@ -877,9 +895,12 @@ function saveProposal(token, p) {
     if (repeatOf && repeatOf === p.id) throw new Error('A record cannot be a repeat of itself.');
 
     const now = new Date();
-    if (!id) id = nextId_('PROC', SHEETS.recs, received);
+    if (!id) id = nextId_('PROC', SHEETS.recs, fy);
+    const oldId = old && fyOf_(old) !== fy ? id : '';
+    if (oldId) id = nextId_('PROC', SHEETS.recs, fy); // the year in the ID is the fiscal year
     const r = old ? old.slice() : new Array(HEADERS.Procurements.length).fill('');
-    r[C['Record ID']] = id; r[C['Date Received']] = received; r[C.Office] = p.office;
+    while (r.length < HEADERS.Procurements.length) r.push('');
+    r[C['Record ID']] = id; r[C['Date Received']] = received; r[C['Fiscal Year']] = fy; r[C.Office] = p.office;
     r[C['Prepared By']] = clean_(p.preparedBy); r[C['Proposal Type']] = p.proposalType;
     r[C['With ATC']] = p.withATC ? 'Yes' : 'No'; r[C['Procurement Type']] = p.procType; r[C.Title] = title;
     r[C.Venue] = isEvent ? clean_(p.venue) : ''; r[C.Start] = start || ''; r[C.End] = end || '';
@@ -889,16 +910,22 @@ function saveProposal(token, p) {
     if (!old) r[C.Status] = 'Active';
     r[C['Repeat Type']] = repeatType; r[C['Repeat Of']] = repeatOf; r[C['Repeat Note']] = repeatType ? clean_(p.repeatNote) : '';
     r[C.Remarks] = clean_(p.remarks);
+    if (oldId) r[C.Remarks] = addNote_(r[C.Remarks], `Dating ID ${oldId} (pinalitan ang FY)`);
     if (!old) { r[C['Encoded By']] = user.username; r[C['Encoded At']] = now; }
     r[C['Updated At']] = now; r[C['Updated By']] = user.username;
     writeRow_(SHEETS.recs, old ? row : 0, r);
+    if (oldId) renumber_(oldId, id, fyOf_(old), fy, user);
     bumpDataVersion_();
 
     audit_(user.username, old ? 'UPDATE_RECORD' : 'CREATE_RECORD', id,
-      `${title}; ${p.procType}; ${p.proposalType}${p.withATC ? ' + ATC' : ''}${repeatType ? `; ${repeatType}${repeatOf ? ' of ' + repeatOf : ''}` : ''}`);
-    return { ok: true, record: old ? oneRecord_(id) : recordObj_(r, [], []) };
+      `${title}; FY ${fy}${oldId ? ' (was ' + oldId + ')' : ''}; ${p.procType}; ${p.proposalType}${p.withATC ? ' + ATC' : ''}` +
+      `${repeatType ? `; ${repeatType}${repeatOf ? ' of ' + repeatOf : ''}` : ''}`);
+    // a new record has no PRs or routing yet; an edited one keeps its PRs and routing (the browser already has
+    // them), so they are not read again unless the IDs changed
+    return { ok: true, record: oldId ? oneRecord_(id) : recordObj_(r, null, null), oldId };
   } finally {
     lock.releaseLock();
+    console.log(`saveProposal ${Date.now() - t0} ms`); // seen in Apps Script > Executions
   }
 }
 
@@ -912,9 +939,12 @@ function saveProposal(token, p) {
  * The SPPMP items are not part of the PR form; they come later (saveSppmp).
  * Missing attachments do not stop the save; the PR shows as "Incomplete – return to office" (see prMissing in Index.html).
  * year = the year shown in the browser, whose budget summary is sent back.
- * Returns { ok: true, record, budgets, budget: { year, office, budget, used } }.
+ * Returns { ok: true, recordId, pr, keepItems, budgets, budget: { year, office, budget, used } }: only the saved PR,
+ * which the browser puts into the record it already has (keepItems: the SPPMP items it has stay). Reading the
+ * whole record again would take two more sheet reads (SPPMP items and routing) on every PR save.
  */
 function savePR(token, pr, year) {
+  const t0 = Date.now();
   const user = auth_(token, ['Admin', 'Encoder']);
   const received = parseIso_(pr.received);
   if (!received) throw new Error('Date received of the PR is required.');
@@ -959,7 +989,7 @@ function savePR(token, pr, year) {
     }
 
     const now = new Date();
-    if (!id) id = nextId_('PR', SHEETS.prs, received);
+    if (!id) id = nextId_('PR', SHEETS.prs, fyOf_(rec)); // the fiscal year of the procurement, not the date received
     const r = old ? old.slice() : new Array(HEADERS.PRs.length).fill('');
     r[P['PR ID']] = id; r[P['Record ID']] = String(rec[0]); r[P['DTS No.']] = clean_(pr.dts);
     r[P['Date Received']] = received; r[P['PR Date']] = prDate || ''; r[P.Requisitioner] = clean_(pr.requisitioner);
@@ -976,20 +1006,21 @@ function savePR(token, pr, year) {
 
     audit_(user.username, old ? 'UPDATE_PR' : 'CREATE_PR', id, `${rec[0]}; DTS ${clean_(pr.dts) || '—'}; ${amount}; ` +
       `${plan || 'no PPMP/SPPMP'}${replaces ? '; replaces ' + replaces : ''}`);
-    const prYear = received.getFullYear(), office = String(rec[C.Office]);
+    const prYear = fyOf_(rec), office = String(rec[C.Office]);
     const budgets = budgetSummary_(parseInt(year, 10) || prYear);
     const mine = (prYear === (parseInt(year, 10) || prYear) ? budgets : budgetSummary_(prYear)).find(b => b.office === office);
-    return { ok: true, record: oneRecord_(String(rec[0])), budgets,
+    return { ok: true, recordId: String(rec[0]), pr: prObj_(r, []), keepItems: !!old, budgets,
       budget: Object.assign({ year: prYear, office, budget: null, used: 0 }, mine || {}) };
   } finally {
     lock.releaseLock();
+    console.log(`savePR ${Date.now() - t0} ms`); // seen in Apps Script > Executions
   }
 }
 
 /**
  * Step 3: the SPPMP of a PR. Encoded later than the PR: the papers go back to the office first and the
  * SPPMP is entered when they return. s = { justification, items: [{ item, amount }] }. Marks the PR as SPPMP
- * unless it already has a PPMP.
+ * unless it already has a PPMP. Returns only the PR (with its items); the browser puts it into the record it has.
  */
 function saveSppmp(token, prId, s) {
   const user = auth_(token, ['Admin', 'Encoder']);
@@ -1018,7 +1049,7 @@ function saveSppmp(token, prId, s) {
     writeChildRows_(SHEETS.sppmp, String(prId), items.map((it, i) => [String(prId), i + 1, it.item, it.amount]), false);
     bumpDataVersion_();
     audit_(user.username, 'SAVE_SPPMP', prId, `${recordId}; ${items.length} item/s; ${items.reduce((a, it) => a + it.amount, 0)}`);
-    return { ok: true, record: oneRecord_(recordId) };
+    return { ok: true, recordId, pr: prObj_(r, items.map((it, i) => [String(prId), i + 1, it.item, it.amount])) };
   } finally {
     lock.releaseLock();
   }
@@ -1077,7 +1108,10 @@ function setStatus(token, kind, id, status, info, year) {
 
 /* ======================== STEP 4: ROUTING ======================== */
 
-/** e = { recordId, prId ('' = the proposal), date, time, action, person, remarks } */
+/**
+ * e = { recordId, prId ('' = the proposal), date, time, action, person, remarks }
+ * Returns only the new entry; the browser adds it to the record it has (no need to read the record again).
+ */
 function addRouting(token, e) {
   const user = auth_(token, ['Admin', 'Encoder']);
   const when = parseDateTime_(e.date, e.time);
@@ -1094,10 +1128,11 @@ function addRouting(token, e) {
       throw new Error(`PR ${prId} is not part of ${e.recordId}.`);
     }
     const id = 'RT-' + Utilities.getUuid().slice(0, 8);
-    writeRow_(SHEETS.routing, 0, [id, e.recordId, prId, when, e.action, person, clean_(e.remarks), user.username, new Date()]);
+    const row = [id, e.recordId, prId, when, e.action, person, clean_(e.remarks), user.username, new Date()];
+    writeRow_(SHEETS.routing, 0, row);
     bumpDataVersion_();
     audit_(user.username, 'ADD_ROUTING', e.recordId, `${prId || 'proposal'}: ${e.action} – ${person} (${dt_(when)})`);
-    return { ok: true, record: oneRecord_(e.recordId) };
+    return { ok: true, recordId: e.recordId, entry: routeObj_(row) };
   } finally {
     lock.releaseLock();
   }
@@ -1120,7 +1155,7 @@ function deleteRouting(token, entryId) {
     bumpDataVersion_();
     audit_(user.username, 'DELETE_ROUTING', String(x[R['Record ID']]),
       `${x[R['PR ID']] || 'proposal'}: ${x[R.Action]} – ${x[R.Person]} (${dt_(x[R['Date & Time']])})`);
-    return { ok: true, record: oneRecord_(String(x[R['Record ID']])) };
+    return { ok: true, recordId: String(x[R['Record ID']]), removed: String(entryId) };
   } finally {
     lock.releaseLock();
   }
@@ -1156,13 +1191,14 @@ function saveBudget(token, year, office, amount) {
 
 /**
  * Budget, used amount and number of PRs per office for a year: [{ office, budget (null = not set), used, prs }].
- * Used = PRs received that year that are not cancelled (and whose record is not cancelled).
+ * Used = PRs of that fiscal year (the FY of their record) that are not cancelled (and whose record is not cancelled).
  */
 function budgetSummary_(year, all) {
   const recs = all ? all.recs : rows_(SHEETS.recs), prs = all ? all.prs : rows_(SHEETS.prs);
-  const officeOf = {}, cancelledRec = new Set();
+  const officeOf = {}, fyOfRec = {}, cancelledRec = new Set();
   recs.forEach(r => {
     officeOf[String(r[0])] = String(r[C.Office]);
+    fyOfRec[String(r[0])] = fyOf_(r);
     if (String(r[C.Status]) === 'Cancelled') cancelledRec.add(String(r[0]));
   });
   const out = {};
@@ -1171,8 +1207,7 @@ function budgetSummary_(year, all) {
   prs.forEach(p => {
     const recId = String(p[P['Record ID']]);
     if (String(p[P.Status]) === 'Cancelled' || cancelledRec.has(recId)) return;
-    const d = iso_(p[P['Date Received']]);
-    if (parseInt(d ? d.slice(0, 4) : (/-(\d{4})-/.exec(String(p[0])) || [0, 0])[1], 10) !== year) return;
+    if ((fyOfRec[recId] || yearOf_(p)) !== year) return;
     const b = get(officeOf[recId] || '(no office)');
     b.used += Number(p[P.Amount]) || 0;
     b.prs++;
@@ -1388,12 +1423,53 @@ function writeChildRows_(name, parentId, newRows, isNew) {
 }
 
 /**
- * Next ID for the year of the date received: PROC-2027-00001 (records), PR-2027-00001 (PRs), …
+ * Next ID for a fiscal year: PROC-2027-00001 (records), PR-2027-00001 (PRs), …
  * Numbering starts again at 00001 every year. Caller must hold the script lock.
  */
-function nextId_(kind, sheetName, received) {
-  const prefix = `${kind}-${Utilities.formatDate(received, TIMEZONE, 'yyyy')}-`;
+function nextId_(kind, sheetName, fy) {
+  const prefix = `${kind}-${fy}-`;
   return prefix + String(nextNumber_(sheetName, prefix)).padStart(5, '0');
+}
+
+function addNote_(remarks, note) {
+  return remarks ? remarks + ' | ' + note : note;
+}
+
+/**
+ * The fiscal year of a record changed, so it got an ID of the new year: its PRs get new IDs too, and every
+ * place that points to the old IDs is changed (PRs, SPPMP items, routing, "repeat of", "replaces PR").
+ * Only the changed columns are written. The old IDs are kept in the Remarks and the AuditLog.
+ */
+function renumber_(oldId, newId, oldFy, newFy, user) {
+  const prRows = raw_(SHEETS.prs), prMap = {};
+  const prefix = `PR-${newFy}-`;
+  let n = nextNumber_(SHEETS.prs, prefix);
+  prRows.forEach(p => { if (String(p[P['Record ID']]) === oldId) prMap[String(p[0])] = prefix + String(n++).padStart(5, '0'); });
+  const prOf = v => prMap[String(v)] || v;
+
+  /** Writes one column of a sheet when a value in it changed. */
+  const remapColumn = (name, rows, col, fn) => {
+    let changed = false;
+    const values = rows.map(x => { const v = fn(x[col], x); if (v !== x[col]) changed = true; return [v]; });
+    if (changed && values.length) sheet_(name).getRange(2, col + 1, values.length, 1).setValues(values);
+    return changed;
+  };
+  const prChanged = remapColumn(SHEETS.prs, prRows, P['PR ID'], v => prOf(v));
+  remapColumn(SHEETS.prs, prRows, P['Record ID'], v => (String(v) === oldId ? newId : v));
+  remapColumn(SHEETS.prs, prRows, P['Replaces PR'], v => prOf(v));
+  remapColumn(SHEETS.prs, prRows, P.Remarks, (v, x) => (prMap[String(x[P['PR ID']])]
+    ? addNote_(v, `Dating ID ${x[P['PR ID']]} (FY ${oldFy} → ${newFy})`) : v));
+  forget_(SHEETS.prs);
+  if (prChanged) {
+    remapColumn(SHEETS.sppmp, raw_(SHEETS.sppmp), 0, v => prOf(v));
+    forget_(SHEETS.sppmp);
+  }
+  const routeRows = raw_(SHEETS.routing);
+  remapColumn(SHEETS.routing, routeRows, R['Record ID'], v => (String(v) === oldId ? newId : v));
+  if (prChanged) remapColumn(SHEETS.routing, routeRows, R['PR ID'], v => prOf(v));
+  forget_(SHEETS.routing);
+  if (remapColumn(SHEETS.recs, raw_(SHEETS.recs), C['Repeat Of'], v => (String(v) === oldId ? newId : v))) forget_(SHEETS.recs);
+  Object.keys(prMap).forEach(k => audit_(user.username, 'CHANGE_FY', prMap[k], 'was ' + k));
 }
 
 function nextNumber_(name, prefix) {

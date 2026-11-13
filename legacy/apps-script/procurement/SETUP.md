@@ -2,6 +2,31 @@
 
 (Dating "Activity Proposal System".) Hiwalay na app ito sa Travel Order System: sariling Google Sheet, puwedeng parehong login. Para sa lahat ng taon.
 
+## Update: Para sa taon (FY) / early procurement (Nob 2026)
+Para sa sistemang tumatakbo na ngayon:
+1. Sa Apps Script: palitan ang buong laman ng `Code.gs` at `Index` ng bagong **Code.gs** at **Index.html** → **Save**.
+2. I-refresh ang Google Sheet → **Procurement System → 1. Setup sheets + admin login** (isang beses lang). Idadagdag nito
+   ang column na `Fiscal Year` sa dulo ng `Procurements`. Walang nabubura; hindi na itatanong ulit ang logins o admin.
+   (Kahit makalimutan ito, kusang nadadagdag ang column sa unang save; ang Setup lang ang naglalagay ng header nang sigurado.)
+3. **Deploy → Manage deployments → ✏ → Version: New version → Deploy** (para hindi magbago ang link).
+
+Walang kailangang baguhin sa lumang rows: kapag blangko ang `Fiscal Year`, ang taon ng *Date received* ang ginagamit
+(pareho ng dati). Tingnan ang **Para sa taon (FY)** sa ibaba.
+
+Kasama rin sa update na ito ang mas mabilis na pag-save (mas kaunting pagbasa sa sheets):
+
+| Save | Dati | Ngayon |
+|---|---|---|
+| Edit ng proposal | 9 na tawag sa sheets | 3 |
+| PR (bago o edit) | 7 | 5 |
+| SPPMP | 12 | 9 |
+| Routing (add / remove) | 8 / 11 | 4 / 5 |
+
+Para makita kung gaano katagal ang bawat save: Apps Script → **Executions** → buksan ang `saveProposal` o `savePR`;
+may log na hal. `savePR 1840 ms`. Kung mabagal pa rin minsan, kadalasan ito ay (1) ang unang tawag pagkatapos ng
+matagal na walang gumagamit (pinapagising ng Google ang script, 2–5 segundo), o (2) may ibang nagse-save nang sabay
+(naghihintay ang isa hanggang matapos ang isa pa).
+
 ## Kung naka-setup na ang lumang Activity Proposal System (update)
 1. Sa Apps Script ng parehong Google Sheet: palitan ang laman ng `Code.gs` at `Index` ng bagong **Code.gs** at **Index.html** → **Save**.
 2. I-refresh ang Google Sheet. Ang menu ay **Procurement System** na.
@@ -43,6 +68,7 @@ Kung naka-link sa Travel Order System, iisa ang users ng dalawang app (Users tab
 | Ilalagay | Paliwanag |
 |---|---|
 | Date received, Office, **Prepared by, DTS No., Logbook No. (G#)** | Lahat **required** (maliban kapag ine-edit ang record na galing sa 2026 import) |
+| **Para sa taon (FY)** | Kusang naka-set sa taon ng Date received. Palitan lang kapag **early procurement** (hal. natanggap Nob 2026 para sa 2027). |
 | **Anong klaseng procurement?** | **Event** (may venue at petsa) · **Equipment** · **Repair** · **Hiring of Personnel** (may simula at katapusan ng kontrata) · **Others** |
 | **Proposal** | **Activity Proposal** · **Project Proposal** · **Wala (PR lang)**, at ang status nito |
 | **Authority to Conduct** | i-check kung meron, at ang status |
@@ -85,9 +111,19 @@ Ang mali ang na-encode ay puwedeng tanggalin (✕) ng nag-encode o ng Admin.
   (kusang napipili kung may cancelled na PR ang record). Makikita sa dalawang PR: *Kapalit ng …* at *Pinalitan ng …*.
 - **Restore** para ibalik. Naka-record sa Remarks at AuditLog kung sino, kailan at bakit.
 
+### Para sa taon (FY) / early procurement
+- Ang **FY** ang taon ng pondo. Karaniwan ito ang taon ng *Date received*, kaya hindi na kailangang galawin.
+- **Early procurement** (natanggap Nob–Dis 2026 para sa 2027): piliin ang **2027 — early procurement**. Mangyayari:
+  nasa listahan ng **2027** ang record (piliin ang 2027 sa itaas), sa **2027 budget** ibabawas ang mga PR nito, at ang ID ay
+  **PROC-2027-…** / **PR-2027-…** kahit 2026 pa natanggap ang PR. May tag na **Early · FY 2027**.
+- Sa Dashboard ng kasalukuyang taon: *"May N early procurement para sa 2027"* → **Tingnan ang 2027**.
+- Puwede ring piliin ang nakaraang taon (hal. natanggap Enero 2027 para sa pondo ng 2026).
+- **Mali ang napiling taon?** Edit → palitan ang FY → Save. Magkakaroon ng ID ng bagong taon ang record at ang mga PR nito
+  (pati sa SPPMP, routing, *Repeat of* at *Kapalit ng*), at nakasulat sa Remarks ang dating ID.
+
 ### Budget (**Budget** tab)
 - **Set budget** sa bawat office (para sa taong naka-select sa itaas).
-- Kusang **ibinabawas ang amount ng bawat PR** na natanggap sa taong iyon. Ang cancelled na PR (o PR ng cancelled na procurement)
+- Kusang **ibinabawas ang amount ng bawat PR** ng mga procurement na may FY ng taong iyon. Ang cancelled na PR (o PR ng cancelled na procurement)
   ay hindi kasama, kaya naibabalik ang pera.
 - Makikita: Budget, Used, **Remaining**, % used. Pula kapag lampas.
 - Sa PR form, makikita agad kung magkano ang matitira pagkatapos ng PR. **Kapag lampas, may babala pero puwede pa ring i-save.**
@@ -98,12 +134,13 @@ Habang tinatype ang title, lumalabas ang **⚠ May kahawig na activity na ang (o
 gamitin ang **+ Add PR** sa lumang record. Ang **Repeated** tab ay nagpapakita ng magkakahawig na records (lahat ng taon).
 
 ## Record ID
-**PROC-2027-00001** (procurement) at **PR-2027-00001** (PR). Ang taon ay galing sa *Date received*; nagsisimula ulit sa 00001 bawat taon.
+**PROC-2027-00001** (procurement) at **PR-2027-00001** (PR). Ang taon ay ang **FY** ng procurement (karaniwan ang taon ng
+*Date received*; sa early procurement, ang susunod na taon). Nagsisimula ulit sa 00001 bawat taon.
 
 ## Para sa admin: mga sheet
 | Sheet | Laman |
 |---|---|
-| `Procurements` | Isang row bawat procurement (step 1). Ang huling column na `Item Details` ay ang equipment / ire-repair. |
+| `Procurements` | Isang row bawat procurement (step 1). `Item Details` = equipment / ire-repair; `Fiscal Year` = taon ng pondo (blangko = taon ng Date received). |
 | `PRs` | Isang row bawat Purchase Request (step 2) |
 | `SPPMPItems` | Isang row bawat SPPMP item (step 3) |
 | `Routing` | Isang row bawat routing entry (step 4) |

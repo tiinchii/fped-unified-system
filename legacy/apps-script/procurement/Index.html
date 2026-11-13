@@ -72,6 +72,8 @@
   .pill.sppmp { background:#fdf0e6; color:#a04000; }
   .pill.bad { background:var(--red); color:#fff; }
   .pill.ok { background:var(--greenbg); color:var(--green); }
+  .pill.early { background:var(--amberbg); color:var(--amber); }   /* received before its fiscal year */
+  .fyhint { color:var(--amber); font-size:12px; margin-top:4px; }
   .tag { display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:4px; vertical-align:1px; background:#eef0f3; color:#4a5563; text-transform:uppercase; letter-spacing:.03em; }
   .tag.Event { background:#e3eefa; color:var(--blue2); }
   .tag.Equipment { background:#e9f7ef; color:var(--green); }
@@ -214,6 +216,7 @@
       <div class="stat red" onclick="show('budget'); renderBudget();"><b id="stOver">0</b><span>Offices over budget</span></div>
       <div class="stat" onclick="goList({ status: 'Cancelled' })"><b id="stCancel">0</b><span>Cancelled</span></div>
     </div>
+    <div id="dbEarly"></div>
     <div class="two">
       <div><h3>PR – incomplete / return to office</h3><div class="card flush"><table class="stack"><tbody id="dbInc"></tbody></table></div></div>
       <div><h3>For review FPED (latest)</h3><div class="card flush"><table class="stack"><tbody id="dbReview"></tbody></table></div></div>
@@ -229,6 +232,7 @@
       <h3><span class="step">1</span> Proposal</h3>
       <div class="grid">
         <div><label class="f">Date received *</label><input type="date" id="fReceived"></div>
+        <div><label class="f">Para sa taon (FY) *</label><select id="fFy"></select><div id="fFyHint"></div></div>
         <div><label class="f">Office *</label><select id="fOffice"></select></div>
         <div><label class="f">Prepared by <span class="fReq">*</span></label><input id="fBy" list="byOpts" autocomplete="off"></div>
         <div><label class="f">DTS No. <span class="fReq">*</span></label><input id="fDts"></div>
@@ -883,14 +887,14 @@ async function refresh() { await load(); toast('Updated with the latest data'); 
  */
 function expandLite(a) {
   return { id: a[0], received: a[1], office: a[2], title: a[3], status: a[4], repeatType: a[5], repeatOf: a[6],
-    start: a[7], end: a[8], procType: a[9], dts: a[10], lite: true,
+    start: a[7], end: a[8], procType: a[9], dts: a[10], fy: a[12], lite: true,
     prs: a[11].map(x => ({ id: x[0], dts: x[1], status: x[2] === 'C' ? 'Cancelled' : 'Active', title: x[3], amount: 0, items: [], lite: true })),
     routing: [], proposalType: 'None', withATC: false, preparedBy: '', venue: '', amount: 0, proposalStatus: '', atcStatus: '',
     logbook: '', cancel: null, repeatNote: '', remarks: '', source: '', by: '', at: '', updatedBy: '', details: '' };
 }
 
 /* The server leaves out empty values to keep the download small (slim_ in Code.gs); fill() puts them back. */
-const REC_BLANK = { received: '', office: '', preparedBy: '', proposalType: 'None', withATC: false, procType: '', title: '', details: '', venue: '', start: '', end: '',
+const REC_BLANK = { received: '', fy: 0, office: '', preparedBy: '', proposalType: 'None', withATC: false, procType: '', title: '', details: '', venue: '', start: '', end: '',
   amount: 0, proposalStatus: '', atcStatus: '', dts: '', logbook: '', status: 'Active', cancel: null, repeatType: '', repeatOf: '', repeatNote: '',
   remarks: '', source: '', by: '', at: '', updatedBy: '' };
 const PR_BLANK = { recordId: '', dts: '', received: '', prDate: '', requisitioner: '', title: '', venue: '', start: '', end: '', amount: 0, plan: '',
@@ -945,27 +949,53 @@ function index(data) {
 
   const thisYear = +D.today.slice(0, 4);
   const years = new Set([thisYear, thisYear + 1]); // next year too, so its budgets can be entered early
-  D.records.forEach(r => { if (r.received) years.add(+r.received.slice(0, 4)); });
+  D.records.forEach(r => { if (fyOf(r)) years.add(fyOf(r)); });
   year = D.year || thisYear;
   $('yearSel').innerHTML = Array.from(years).sort((a, b) => b - a)
     .map(y => '<option' + (y === year ? ' selected' : '') + '>' + y + '</option>').join('');
 }
 // another year: get its full details from the server (the other years are already here in short form)
+function showYear(y) { $('yearSel').value = String(y); $('yearSel').dispatchEvent(new Event('change')); }
 $('yearSel').addEventListener('change', async () => {
   year = +$('yearSel').value;
   if (year === D.year) { renderAll(); return; }
   toast('Loading ' + year + '…');
   await load();
 });
-function inYear(r) { return (r.received || (/-(\d{4})-/.exec(r.id) || [0, ''])[1]).slice(0, 4) === String(year); } // a few imported rows have no date
+/** Fiscal year of a record (same rule as fyOf_ in Code.gs); a few imported rows have no date. */
+function fyOf(r) { return r.fy || +(r.received || (/-(\d{4})-/.exec(r.id) || [0, ''])[1]).slice(0, 4); }
+function inYear(r) { return fyOf(r) === year; }
+/** Received before its fiscal year, e.g. received Nov 2026 for 2027. */
+function isEarly(r) { return !!r.received && +r.received.slice(0, 4) < fyOf(r); }
+function earlyPill(r) { return isEarly(r) ? '<span class="pill early" title="Natanggap ' + fmt(r.received) + ', para sa FY ' + fyOf(r) + '">Early · FY ' + fyOf(r) + '</span>' : ''; }
+/** The years a record received on this date can be for: last year, the year itself, next year (early procurement). */
+function fyChoices(received) { const y = +(received || D.today).slice(0, 4); return [y - 1, y, y + 1]; }
 
-/** Put a saved record (and the new budget summary) into the local data instead of reloading everything. */
-function applyRecord(rec, budgets) {
+/**
+ * Put a saved record (and the new budget summary) into the local data instead of reloading everything.
+ * A record sent without its PRs and routing (an edit of step 1) keeps the ones already here. oldId: the record
+ * had another ID before (its fiscal year was changed).
+ */
+function applyRecord(rec, budgets, oldId) {
+  const prev = recById[oldId || rec.id];
+  if (rec.prs == null) { rec.prs = prev ? prev.prs : []; rec.routing = prev ? prev.routing : []; }
+  fill(rec);
+  if (oldId) D.records = D.records.filter(r => r.id !== oldId);
   const i = D.records.findIndex(r => r.id === rec.id);
   if (i >= 0) D.records[i] = rec; else D.records.push(rec);
   if (budgets) D.budgets = budgets;
   index(D); renderAll();
   if ($('viewModal').classList.contains('show') && vmId === rec.id) viewRecord(rec.id);
+}
+
+/**
+ * Changes one part of a record already here (a PR, the SPPMP, a routing entry) with what the server sent back,
+ * instead of the server reading the whole record again: fewer sheet reads, so the save is faster.
+ */
+function applyPart(recordId, change, budgets) {
+  const rec = Object.assign({}, recById[recordId]);
+  change(rec);
+  applyRecord(rec, budgets);
 }
 
 function renderAll() {
@@ -998,7 +1028,7 @@ function dtsLine(r) {
   return '<div class="small muted">DTS ' + (r.dts ? esc(r.dts) : '—') + (prDts.length ? ' · PR DTS ' + prDts.map(esc).join(', ') : '') + '</div>';
 }
 function shortRow(r) {
-  return '<tr><td data-label="ID">' + idLink(r.id) + '<div class="small muted">' + fmt(r.received) + '</div></td>' +
+  return '<tr><td data-label="ID">' + idLink(r.id) + '<div class="small muted">' + fmt(r.received) + '</div>' + earlyPill(r) + '</td>' +
     '<td data-label="Office">' + esc(r.office) + '</td><td data-label="Title">' + esc(r.title) + typeTag(r) + ' ' + repeatPill(r) + dtsLine(r) + '</td>' +
     '<td data-label="Documents">' + docPills(r) + '</td></tr>';
 }
@@ -1013,6 +1043,10 @@ function renderDashboard() {
   $('stNoPr').textContent = active.filter(r => !activePRs(r).length).length;
   $('stOver').textContent = (D.budgets || []).filter(b => b.budget != null && b.used > b.budget).length;
   $('stCancel').textContent = recs.length - active.length;
+  // early procurements already received for next year are in next year's list
+  const early = year === +D.today.slice(0, 4) ? D.records.filter(r => fyOf(r) === year + 1 && r.status !== 'Cancelled').length : 0;
+  $('dbEarly').innerHTML = early ? '<div class="alert info">May <b>' + early + '</b> early procurement para sa ' + (year + 1) +
+    '. Nasa listahan at budget ng ' + (year + 1) + ' ang mga ito. <span class="link" onclick="showYear(' + (year + 1) + ')">Tingnan ang ' + (year + 1) + '</span></div>' : '';
   const latest = list => list.slice().sort((a, b) => b.received.localeCompare(a.received) || b.id.localeCompare(a.id)).slice(0, 12);
   $('dbReview').innerHTML = latest(review).map(shortRow).join('') || '<tr><td class="muted">None</td></tr>';
   $('dbInc').innerHTML = inc.sort((a, b) => b.p.received.localeCompare(a.p.received)).slice(0, 15).map(x =>
@@ -1037,6 +1071,7 @@ function resetForm() {
   $('fInfo').innerHTML = ''; $('fMsg').innerHTML = '';
   ['fBy', 'fDts', 'fLog', 'fTitle', 'fItem', 'fVenue', 'fStart', 'fEnd', 'fCStart', 'fCEnd', 'fAmount', 'fRemarks', 'fRepeatNote'].forEach(id => $(id).value = '');
   $('fReceived').value = D ? D.today : '';
+  form.fy = null; // follows the date received until it is changed
   $('fOffice').value = '';
   $('fWithATC').checked = true;
   ['fPStatus', 'fAtcStatus'].forEach(id => $(id).value = 'For Review FPED');
@@ -1055,7 +1090,7 @@ async function editRecord(id) {
   // imported 2026 records often have no prepared by / DTS / G#, so these stay optional for them (same as Code.gs)
   document.querySelectorAll('.fReq').forEach(el => el.style.display = r.source ? 'none' : 'inline');
   $('formTitle').textContent = 'Edit ' + id;
-  $('fReceived').value = r.received; $('fOffice').value = r.office; $('fBy').value = r.preparedBy;
+  $('fReceived').value = r.received; form.fy = fyOf(r); form.oldFy = fyOf(r); $('fOffice').value = r.office; $('fBy').value = r.preparedBy;
   $('fDts').value = r.dts; $('fLog').value = r.logbook; $('fTitle').value = r.title;
   setRadio('fType', r.procType); setRadio('fPType', r.proposalType || 'None');
   $('fPStatus').value = r.proposalStatus || 'For Review FPED';
@@ -1073,7 +1108,23 @@ async function editRecord(id) {
 }
 
 /* ---------- show / hide parts of the form, and when Save can be clicked ---------- */
+/** The FY choices for the date received; the chosen year stays when it is still one of them. */
+function updateFy() {
+  if (!D) return;
+  const ys = fyChoices($('fReceived').value);
+  if (form.fy == null || ys.indexOf(form.fy) < 0) form.fy = ys[1];
+  $('fFy').innerHTML = ys.map((y, i) => '<option value="' + y + '"' + (y === form.fy ? ' selected' : '') + '>' + y +
+    (i === 2 ? ' — early procurement' : i === 0 ? ' — para sa nakaraang taon' : '') + '</option>').join('');
+  let hint = '';
+  if (form.fy !== ys[1]) hint = (form.fy > ys[1] ? 'Early procurement: n' : 'N') + 'asa listahan ng <b>' + form.fy + '</b> at sa <b>' + form.fy + '</b> budget ibabawas ang PR.';
+  if (form.id && form.oldFy && form.oldFy !== form.fy) hint += (hint ? '<br>' : '') + 'Magiging ID ng ' + form.fy + ' ang ' + esc(form.id) + ' at ang mga PR nito.';
+  $('fFyHint').innerHTML = hint ? '<div class="fyhint">' + hint + '</div>' : '';
+}
+$('fReceived').addEventListener('change', updateFy);
+$('fFy').addEventListener('change', () => { form.fy = +$('fFy').value; updateFy(); });
+
 function updateForm() {
+  updateFy();
   const type = radio('fType'), ptype = radio('fPType');
   $('fEventBox').style.display = type === 'Event' ? 'block' : 'none';
   $('fHireBox').style.display = type === 'Hiring of Personnel' ? 'block' : 'none';
@@ -1153,7 +1204,7 @@ function renderSimilar() {
 function formData() {
   const type = radio('fType'), hire = type === 'Hiring of Personnel';
   return {
-    id: form.id, received: $('fReceived').value, office: $('fOffice').value, preparedBy: $('fBy').value, dts: $('fDts').value,
+    id: form.id, received: $('fReceived').value, fy: form.fy, office: $('fOffice').value, preparedBy: $('fBy').value, dts: $('fDts').value,
     logbook: $('fLog').value, title: $('fTitle').value, procType: type, proposalType: radio('fPType'),
     details: ITEM_LABEL[type] ? $('fItem').value : '',
     proposalStatus: $('fPStatus').value, withATC: $('fWithATC').checked, atcStatus: $('fAtcStatus').value,
@@ -1206,8 +1257,8 @@ $('fSave').onclick = async () => {
       scrollToEl($('fRepeatCard'));
       return;
     }
-    applyRecord(res.record);
-    toast((p.id ? 'Updated ' : 'Saved ') + res.record.id);
+    applyRecord(res.record, null, res.oldId);
+    toast((p.id ? 'Updated ' : 'Saved ') + res.record.id + (res.record.fy !== year ? ' — nasa listahan ng ' + res.record.fy + ' (piliin ang ' + res.record.fy + ' sa itaas)' : ''));
     resetForm();
     viewRecord(res.record.id);
   } catch (e) {
@@ -1233,7 +1284,7 @@ function renderFind() {
     return words.every(w => hay.indexOf(w) >= 0);
   }).sort((a, b) => (a.status === 'Cancelled') - (b.status === 'Cancelled') || b.received.localeCompare(a.received)).slice(0, 15);
   $('pFindList').innerHTML = hits.map(r => '<li class="pick" onclick="pickRecord(\'' + r.id + '\')"><b>' + esc(r.id) + '</b> · ' + esc(r.title) + typeTag(r) +
-    '<div class="small muted">' + esc(r.office) + ' · received ' + fmt(r.received) + (r.dts ? ' · DTS ' + esc(r.dts) : '') + (whenWhere(r) ? ' · ' + whenWhere(r) : '') + '</div>' +
+    '<div class="small muted">' + esc(r.office) + ' · FY ' + fyOf(r) + ' · received ' + fmt(r.received) + (r.dts ? ' · DTS ' + esc(r.dts) : '') + (whenWhere(r) ? ' · ' + whenWhere(r) : '') + '</div>' +
     '<div>' + (r.status === 'Cancelled' ? '<span class="pill Cancelled">Cancelled</span>' : '') + docPills(r) + '</div></li>').join('')
     || '<li class="muted">Walang nahanap.</li>';
 }
@@ -1257,7 +1308,7 @@ async function openPRForm(recordId, prId) {
   $('pFindCard').style.display = 'none'; $('pMain').style.display = 'block'; $('pMsg').innerHTML = '';
   $('pRecCard').innerHTML = '<div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap"><div>' +
     '<div class="muted small">PARA SA</div><b>' + esc(r.id) + '</b> · ' + esc(r.title) + typeTag(r) +
-    '<div class="small muted">' + esc(r.office) + ' · received ' + fmt(r.received) + (r.dts ? ' · DTS ' + esc(r.dts) : '') +
+    '<div class="small muted">' + esc(r.office) + ' · FY ' + fyOf(r) + ' · received ' + fmt(r.received) + (r.dts ? ' · DTS ' + esc(r.dts) : '') +
     (whenWhere(r) ? ' · ' + whenWhere(r) : '') + (r.amount ? ' · ₱' + money(r.amount) : '') + '</div>' +
     '<div>' + docPills(r) + '</div></div>' +
     (p ? '' : '<button class="btn small" onclick="resetPRForm()">Palitan</button>') + '</div>';
@@ -1311,14 +1362,14 @@ function updatePR() {
       '<div class="small">Puwede pa ring i-save; lalabas ito bilang <b>Incomplete – return to office</b>. Pagkabalik sa office, i-record sa Routing: <b>Returned to office</b>.</div></div>'
     : '<div class="alert ok">✔ Kumpleto ang attachments.</div>';
 
-  // budget of the office for the year of the PR
-  const prYear = +(p.received || D.today).slice(0, 4), amt = Number(p.amount) || 0;
+  // budget of the office for the fiscal year of the procurement (an early procurement: next year's)
+  const prYear = fyOf(r), amt = Number(p.amount) || 0;
   let html = '';
   if (prYear !== D.year) {
     html = '<div class="budgetbox">Budget ng ' + esc(r.office) + ' ' + prYear + ': makikita pagka-save (piliin ang ' + prYear + ' sa itaas para makita ngayon).</div>';
   } else {
     const b = budgetOf[r.office];
-    const old = prf.id && prById[prf.id] && prById[prf.id].p.status !== 'Cancelled' && (prById[prf.id].p.received || '').slice(0, 4) === String(D.year) ? prById[prf.id].p.amount : 0;
+    const old = prf.id && prById[prf.id] && prById[prf.id].p.status !== 'Cancelled' ? prById[prf.id].p.amount : 0;
     if (!b || b.budget == null) {
       html = '<div class="budgetbox">Wala pang budget ang ' + esc(r.office) + ' para sa ' + prYear + '. <span class="link" onclick="openBudget(\'' + esc(r.office) + '\')">Ilagay ang budget</span></div>';
     } else {
@@ -1396,7 +1447,7 @@ $('spSave').onclick = async () => {
   try {
     const res = await call('saveSppmp', sp.prId, { justification: $('spJust').value, items });
     closeModal('sppmpModal');
-    applyRecord(res.record);
+    applyPart(res.recordId, rec => { rec.prs = rec.prs.map(x => (x.id === res.pr.id ? res.pr : x)); });
     toast('SPPMP saved');
   } catch (e) { msg(e.message || e); }
   finally { $('spSave').disabled = false; }
@@ -1409,7 +1460,12 @@ $('pSave').onclick = async () => {
   $('pSave').disabled = true; $('pMsg').innerHTML = '';
   try {
     const res = await call('savePR', p, D.year);
-    applyRecord(res.record, res.budgets);
+    // only the saved PR comes back: put it into the record already here
+    applyPart(res.recordId, rec => {
+      const oldPr = rec.prs.find(x => x.id === res.pr.id);
+      if (res.keepItems && oldPr) res.pr.items = oldPr.items;
+      rec.prs = oldPr ? rec.prs.map(x => (x.id === res.pr.id ? res.pr : x)) : rec.prs.concat([res.pr]);
+    }, res.budgets);
     const b = res.budget;
     const left = b.budget == null ? '' : ' · ' + b.office + ' ' + b.year + ' natitira: ' + peso(b.budget - b.used) + (b.used > b.budget ? ' (LAMPAS!)' : '');
     toast((p.id ? 'PR updated' : 'PR saved') + left);
@@ -1444,7 +1500,7 @@ function renderList() {
   $('lBody').innerHTML = rows.slice(0, listLimit).map(r => {
     const pr = prTotal(r), prDts = r.prs.filter(p => p.dts).map(p => (p.status === 'Cancelled' ? '<s>' + esc(p.dts) + '</s>' : esc(p.dts)));
     return '<tr' + (r.status === 'Cancelled' ? ' class="cancelled"' : '') + '>' +
-      '<td style="white-space:nowrap">' + idLink(r.id) + '<div class="small muted">' + fmt(r.received) + '</div></td>' +
+      '<td style="white-space:nowrap">' + idLink(r.id) + '<div class="small muted">' + fmt(r.received) + '</div>' + earlyPill(r) + '</td>' +
       '<td>' + esc(r.office) + '<div class="small muted">' + esc(r.preparedBy) + '</div></td>' +
       '<td><span class="ttl">' + esc(r.title) + '</span>' + typeTag(r) +
       (whenWhere(r) ? '<div class="small muted">' + whenWhere(r) + '</div>' : '') +
@@ -1548,6 +1604,7 @@ async function viewRecord(id) {
     kv('Title', '<b>' + esc(r.title) + '</b>') + kv('Klase', esc(r.procType)) +
     kv(r.procType === 'Repair' ? 'Ire-repair' : r.procType === 'Equipment' ? 'Equipment' : 'Details', esc(r.details).replace(/\n/g, '<br>')) +
     kv('Office', esc(r.office)) + kv('Prepared by', esc(r.preparedBy)) + kv('Date received', fmt(r.received)) +
+    kv('Para sa taon (FY)', fyOf(r) + ' ' + earlyPill(r)) +
     kv('Documents', [hasProposal(r) ? docRow(r.proposalType, r.proposalStatus) : '<span class="muted">Walang proposal (PR lang)</span>',
       r.withATC ? docRow('Authority to Conduct', r.atcStatus) : ''].filter(Boolean).join('<br>')) +
     when + kv('Amount', r.amount ? '₱' + money(r.amount) : '') +
@@ -1620,14 +1677,18 @@ $('rtSave').onclick = async () => {
   try {
     const res = await call('addRouting', e);
     closeModal('routeModal');
-    applyRecord(res.record);
+    applyPart(res.recordId, rec => { rec.routing = rec.routing.concat([res.entry]); });
     toast('Routing saved');
   } catch (err) { $('rtMsg').innerHTML = '<div class="alert bad">' + esc(err.message || err) + '</div>'; }
   finally { $('rtSave').disabled = false; }
 };
 async function removeRoute(entryId) {
   if (!confirm('Tanggalin ang routing entry na ito?')) return;
-  try { const res = await call('deleteRouting', entryId); applyRecord(res.record); toast('Routing entry removed'); }
+  try {
+    const res = await call('deleteRouting', entryId);
+    applyPart(res.recordId, rec => { rec.routing = rec.routing.filter(x => x.id !== res.removed); });
+    toast('Routing entry removed');
+  }
   catch (e) { toast(e.message || e); }
 }
 
