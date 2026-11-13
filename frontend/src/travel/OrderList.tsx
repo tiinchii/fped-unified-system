@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { EmpTag, OfficeFilter, OrderLink, PersonLink, StatusPill } from './bits';
 import { useTravel, type ListFilter } from './context';
-import { days, fmt, isoOf, norm, originalDates, originalPlace, range, statusOf, toDate, travelerNames, type Order, type Person } from './model';
+import { askedDocs, days, fmt, isoOf, norm, originalDates, originalPlace, range, statusOf, toDate, travelerNames, missingDocs, type Order, type Person } from './model';
 
 const PAGE = 200;
 
 export function OrderList() {
-  const { m, canEdit, filter, setFilter, openOrder, showList, askCancel, askRestore, askReschedule } = useTravel();
+  const { m, canEdit, filter, setFilter, openOrder, showList, askCancel, askRestore, askReschedule, askChecklist } = useTravel();
   const [limit, setLimit] = useState(PAGE);
   useEffect(() => setLimit(PAGE), [filter]);
 
@@ -22,6 +22,7 @@ export function OrderList() {
     if (filter.status === 'notcancelled' ? o.status === 'CANCELLED' : filter.status && statusOf(o, m.today) !== filter.status) return false;
     if (filter.office && o.office !== filter.office) return false;
     if (filter.onlyConf && !m.conflictTos.has(o.id)) return false;
+    if (filter.onlyMissing && (o.status !== 'ACTIVE' || !missingDocs(m, o).length)) return false;
     if (q) {
       const hay = norm([o.code, o.destination, o.purpose, o.dtsNo, o.toNo, o.office, travelerNames(m, o).join(' ')].join(' '));
       if (!hay.includes(q)) return false;
@@ -45,6 +46,7 @@ export function OrderList() {
           <option value="">All status</option>
         </select>
         <label className="chk flat"><input type="checkbox" checked={filter.onlyConf} onChange={(e) => setFilter({ onlyConf: e.target.checked })} />Overlaps only</label>
+        {askedDocs(m).length > 0 && <label className="chk flat"><input type="checkbox" checked={filter.onlyMissing} onChange={(e) => setFilter({ onlyMissing: e.target.checked })} />Kulang ang checklist</label>}
         <span className="muted small">{list.length} travel order(s) in {filter.month || m.year}</span>
       </div>
 
@@ -73,11 +75,15 @@ export function OrderList() {
                 <td><StatusPill order={o} />
                   {orig && <div><span className="pill warn">Rescheduled</span></div>}
                   {origPlace && <div><span className="pill warn">Place changed</span></div>}
-                  {overlap && <div><span className="pill bad">Overlap</span></div>}</td>
+                  {overlap && <div><span className="pill bad">Overlap</span></div>}
+                  {o.status === 'ACTIVE' && askedDocs(m).length > 0 && (missingDocs(m, o).length
+                    ? <div><span className="pill warn" title={'Kulang: ' + missingDocs(m, o).map((d) => d.name).join(', ')}>Kulang: {missingDocs(m, o).length} doc</span></div>
+                    : <div><span className="pill ok">Checklist ✔</span></div>)}</td>
                 <td className="actions">
                   {canEdit && o.status === 'ACTIVE' && <>
                     <button className="btn small" onClick={() => openOrder(o.id)}>Edit</button>{' '}
                     <button className="btn small" onClick={() => askReschedule(o)}>Change date / place</button>{' '}
+                    {askedDocs(m).length > 0 && <><button className="btn small" onClick={() => askChecklist(o)}>Checklist</button>{' '}</>}
                     <button className="btn small" onClick={() => askCancel(o)}>Cancel</button>
                   </>}
                   {canEdit && o.status === 'CANCELLED' && <button className="btn small" onClick={() => askRestore(o)}>Restore</button>}

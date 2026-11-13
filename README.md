@@ -1,6 +1,6 @@
 # FPED Unified System
 
-Iisang system para sa Planning Division (FPED): Travel Orders, Procurement, Gmail at Calendar ng office account, at links papunta sa FIND at FAST.
+Iisang system para sa Planning Division (FPED): Travel Orders, Procurement, ang shared Calendar ng mga section, at links papunta sa FIND at FAST.
 
 Papalitan nito ang dalawang Google Apps Script app (Travel Order System at Procurement System). Ililipat ang data mula Google Sheets papunta sa MariaDB para tuloy-tuloy ang records.
 
@@ -12,17 +12,18 @@ Papalitan nito ang dalawang Google Apps Script app (Travel Order System at Procu
 | Database | MariaDB 10.11 sa server; gumagana rin sa MySQL 8 sa local (Flyway migrations) |
 | Frontend | React 19 + TypeScript (Vite) |
 | Server | Ubuntu, Nginx sa harap (HTTPS) |
-| Gmail at Calendar | Google Workspace API (OAuth "Internal" app, office account) |
+| Calendar | Google Calendar API (OAuth "Internal" app), shared calendar ng mga section |
 
 ## Modules
 
 1. **Portal** – home dashboard, menu ng lahat ng system, settings
-2. **Travel Orders** – encode, overlap at duplicate check, reschedule, cancel/restore, personnel, calendar, reports
+2. **Travel Orders** – encode, overlap at duplicate check, reschedule, cancel/restore, document checklist, personnel, calendar, reports
 3. **Procurement** – proposal, PR, SPPMP, routing, budgets, repeat check
-4. **Gmail** – basa, label, print, "Gawing event" (walang reply)
-5. **Calendar** – month/week view, add/edit/delete
+4. **Calendar** – month/week view, add/edit/delete sa shared calendar
 
-Roles: Admin, Encoder, Viewer. Admin at Encoder lang ang may Gmail at Calendar.
+Hindi isasama ang Gmail (desisyon: delikado kung makompromiso ang account).
+
+Roles: Admin, Encoder, Viewer. Admin at Encoder lang ang may Calendar.
 
 ## Ayos ng repository
 
@@ -41,7 +42,7 @@ legacy/apps-script/   ang dalawang lumang Apps Script app, para sa reference at 
 | 1 | Pundasyon: login, roles, users, audit log, portal shell at menu | Tapos (hindi pa naka-deploy sa server) |
 | 2 | Travel Orders: personnel, TO, overlap at duplicate-name check, reschedule, cancel/restore, calendar, reports, offices | Tapos ang code (wala pa ang document checklist; hindi pa nalilipat ang data) |
 | 3 | Procurement: proposal, PR, SPPMP, routing, cancel/restore, budget, repeat check | Tapos ang code (hindi pa nalilipat ang data) |
-| 4 | Gmail at Calendar | Susunod |
+| 4 | Calendar | Susunod |
 | 5 | Import ng data at testing | |
 | 6 | Go-live | |
 

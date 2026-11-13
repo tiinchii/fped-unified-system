@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { api, errorMessage, unwrap } from '../api/client';
 import { Modal } from '../components/Modal';
+import { formatDateTime } from '../format';
 import { ConflictBox, serverItems, tripItems, type ConflictItem } from './bits';
 import { useTravel, type PersonDialogOptions } from './context';
 import { conflictsFor, EMPLOYMENT_LABEL, EMPLOYMENTS, inWindow, norm, officeChoices, range, travelerNames, type Employment, type Order } from './model';
@@ -214,6 +215,71 @@ export function PersonDialog({ options, onClose }: { options: PersonDialogOption
         <div className="modal-actions">
           <button type="button" className="btn" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn primary" disabled={busy}>Save</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/**
+ * The checklist of a travel order: one box per document the checklist asks for. A document that is no longer
+ * asked for still shows when it was ticked before. Nothing is shown while the Admin has not listed any document.
+ */
+export function ChecklistBoxes({ checked, onChange }: { checked: number[]; onChange(checked: number[]): void }) {
+  const { m } = useTravel();
+  const shown = m.data.documentTypes.filter((d) => d.active || checked.includes(d.id));
+  if (!shown.length) return null;
+  const done = shown.filter((d) => d.active && checked.includes(d.id)).length, asked = shown.filter((d) => d.active).length;
+  const toggle = (id: number, on: boolean) => onChange(on ? [...checked, id] : checked.filter((x) => x !== id));
+  return (
+    <div className="checklist">
+      <span className="f">Document checklist · {done} of {asked}{done === asked ? ' ✔ kumpleto' : ''}</span>
+      {shown.map((d) => (
+        <label key={d.id} className={'chk' + (checked.includes(d.id) ? '' : ' missing')}>
+          <input type="checkbox" checked={checked.includes(d.id)} disabled={!d.active && !checked.includes(d.id)}
+            onChange={(e) => toggle(d.id, e.target.checked)} />{d.name}{!d.active && <span className="muted small"> (hindi na hinihingi)</span>}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+/** Ticks the documents that are there, e.g. when the papers come back from the office. */
+export function ChecklistDialog({ order, onClose }: { order: Order; onClose(): void }) {
+  const { m, applyOrder, toast, form, setForm } = useTravel();
+  const [checked, setChecked] = useState(order.checklist.map((c) => c.typeId));
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const byType = new Map(order.checklist.map((c) => [c.typeId, c]));
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true); setError('');
+    try {
+      const saved = await unwrap(api.PUT('/api/travel/orders/{id}/checklist', { params: { path: { id: order.id } }, body: { checkedDocumentIds: checked } }));
+      applyOrder(saved);
+      if (form.id === order.id) setForm({ checked: saved.checklist.map((c) => c.typeId) });
+      toast(order.code + ' checklist saved');
+      onClose();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal title={'Checklist — ' + order.code} onClose={onClose}>
+      <form onSubmit={submit}>
+        <p className="muted">{range(order.startDate, order.endDate)} — {order.destination} — {travelerNames(m, order).join(', ')}</p>
+        <ChecklistBoxes checked={checked} onChange={setChecked} />
+        {order.checklist.length > 0 && <p className="small muted">
+          {[...byType.values()].map((c) => (m.data.documentTypes.find((d) => d.id === c.typeId)?.name ?? '') + ': ' + c.checkedBy + ', ' + formatDateTime(c.checkedAt)).join(' · ')}
+        </p>}
+        {error && <div className="alert bad gap">{error}</div>}
+        <div className="modal-actions">
+          <button type="button" className="btn" onClick={onClose}>Back</button>
+          <button type="submit" className="btn primary" disabled={busy}>Save checklist</button>
         </div>
       </form>
     </Modal>

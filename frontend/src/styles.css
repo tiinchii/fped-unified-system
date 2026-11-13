@@ -230,3 +230,9 @@ table.items input { min-width: 0; } table.items td.num input { text-align: right
   table.items thead { display: none; } table.items tr { padding: 6px 8px; border-top: 1px solid var(--line); } table.items td { border: none; padding: 3px 0; }
   table.items td.num input { max-width: none; }
 }
+
+/* TO checklist */
+.checklist { margin-top: 14px; padding: 10px 14px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fafbfd; display: flex; flex-wrap: wrap; gap: 0 4px; }
+.checklist .f { width: 100%; margin-top: 0; }
+.checklist .chk.missing { color: var(--amber); }
+.pill { white-space: nowrap; }

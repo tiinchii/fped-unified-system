@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/travel/orders/{id}/checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["saveChecklist"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/procurement/records/{id}": {
         parameters: {
             query?: never;
@@ -116,7 +132,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/offices/{id}": {
+    "/api/admin/to-documents/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -132,7 +148,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/links/{id}": {
+    "/api/admin/offices/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -141,6 +157,22 @@ export interface paths {
         };
         get?: never;
         put: operations["update_2"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/links/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_3"];
         post?: never;
         delete?: never;
         options?: never;
@@ -404,7 +436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/offices": {
+    "/api/admin/to-documents": {
         parameters: {
             query?: never;
             header?: never;
@@ -420,6 +452,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/offices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/links": {
         parameters: {
             query?: never;
@@ -429,7 +477,7 @@ export interface paths {
         };
         get: operations["all"];
         put?: never;
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -606,6 +654,7 @@ export interface components {
             remarks?: string;
             travelerIds: number[];
             overlapReason?: string;
+            checkedDocumentIds?: number[];
         };
         ChangeView: {
             /** Format: int64 */
@@ -624,6 +673,13 @@ export interface components {
             changedBy: string;
             /** Format: date-time */
             changedAt: string;
+        };
+        CheckedDocument: {
+            /** Format: int64 */
+            typeId: number;
+            checkedBy: string;
+            /** Format: date-time */
+            checkedAt: string;
         };
         Conflict: {
             /** Format: int64 */
@@ -668,10 +724,14 @@ export interface components {
             updatedAt: string;
             travelerIds: number[];
             changes: components["schemas"]["ChangeView"][];
+            checklist: components["schemas"]["CheckedDocument"][];
         };
         SaveResult: {
             order: components["schemas"]["OrderView"] | null;
             conflicts: components["schemas"]["Conflict"][];
+        };
+        SaveChecklist: {
+            checkedDocumentIds: number[];
         };
         SaveRecord: {
             /** Format: date */
@@ -911,6 +971,20 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        SaveDocumentType: {
+            name: string;
+            /** Format: int32 */
+            sortOrder?: number;
+            active?: boolean;
+        };
+        DocumentTypeView: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            /** Format: int32 */
+            sortOrder: number;
+            active: boolean;
+        };
         SaveOffice: {
             name: string;
             active?: boolean;
@@ -1010,11 +1084,14 @@ export interface components {
             startingIn7Days: number;
             /** Format: int64 */
             withoutToNo: number;
+            /** Format: int64 */
+            checklistIncomplete: number;
         };
         TravelData: {
             orders: components["schemas"]["OrderView"][];
             people: components["schemas"]["PersonView"][];
             offices: components["schemas"]["OfficeView"][];
+            documentTypes: components["schemas"]["DocumentTypeView"][];
             /** Format: date */
             today: string;
             /** Format: int32 */
@@ -1157,6 +1234,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SaveResult"];
+                };
+            };
+        };
+    };
+    saveChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveChecklist"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrderView"];
                 };
             };
         };
@@ -1329,6 +1432,32 @@ export interface operations {
         };
         requestBody: {
             content: {
+                "application/json": components["schemas"]["SaveDocumentType"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DocumentTypeView"];
+                };
+            };
+        };
+    };
+    update_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
                 "application/json": components["schemas"]["SaveOffice"];
             };
         };
@@ -1344,7 +1473,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1807,6 +1936,30 @@ export interface operations {
         };
         requestBody: {
             content: {
+                "application/json": components["schemas"]["SaveDocumentType"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DocumentTypeView"];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
                 "application/json": components["schemas"]["SaveOffice"];
             };
         };
@@ -1842,7 +1995,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;

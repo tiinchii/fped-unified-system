@@ -8,6 +8,7 @@ import { ComingSoonPage } from './pages/ComingSoonPage';
 import { HomePage } from './pages/HomePage';
 import { LinksPage } from './pages/LinksPage';
 import { LoginPage } from './pages/LoginPage';
+import { ChecklistDocsPage } from './pages/ChecklistDocsPage';
 import { OfficesPage } from './pages/OfficesPage';
 import { UsersPage } from './pages/UsersPage';
 import { ProcurementPage } from './procurement/ProcurementPage';
@@ -30,18 +31,13 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="travel-orders" element={<TravelPage />} />
         <Route path="procurement" element={<ProcurementPage />} />
-        <Route path="email" element={<Only roles={['ADMIN', 'ENCODER']}><ComingSoonPage title="Email" phase="Phase 4" items={[
-          'Read the office inbox, with attachments',
-          'Add and remove labels, filter by label',
-          'Print an email',
-          'Make a calendar event from an email ("Gawing event")',
-        ]} /></Only>} />
         <Route path="calendar" element={<Only roles={['ADMIN', 'ENCODER']}><ComingSoonPage title="Calendar" phase="Phase 4" items={[
-          'Month and week view of the office calendar',
+          'Month and week view of the shared calendar of the sections',
           'Add, edit and delete events; they show in Google Calendar too',
         ]} /></Only>} />
         <Route path="admin/users" element={<Only roles={['ADMIN']}><UsersPage /></Only>} />
         <Route path="admin/offices" element={<Only roles={['ADMIN']}><OfficesPage /></Only>} />
+        <Route path="admin/to-checklist" element={<Only roles={['ADMIN']}><ChecklistDocsPage /></Only>} />
         <Route path="admin/links" element={<Only roles={['ADMIN']}><LinksPage /></Only>} />
         <Route path="admin/audit" element={<Only roles={['ADMIN']}><AuditPage /></Only>} />
         <Route path="*" element={<Navigate to="/" replace />} />

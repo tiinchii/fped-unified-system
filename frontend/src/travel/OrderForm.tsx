@@ -1,5 +1,6 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { api, errorMessage, unwrap } from '../api/client';
+import { ChecklistBoxes } from './dialogs';
 import { ConflictBox, EmpTag, HistoryBox, NoticeBox, serverItems, tripItems, type ConflictItem } from './bits';
 import { useTravel } from './context';
 import { conflictsFor, days, inWindow, norm, officeChoices, personOption, range, statusOf, type Person } from './model';
@@ -63,7 +64,7 @@ export function OrderForm() {
     try {
       const body = {
         startDate: start, endDate: end, dateFiled: form.filed || undefined, officeId: form.officeId, destination: form.dest,
-        purpose: form.purpose, dtsNo: form.dts, toNo: form.toNo, remarks: form.remarks, travelerIds: form.pids, overlapReason: form.reason,
+        purpose: form.purpose, dtsNo: form.dts, toNo: form.toNo, remarks: form.remarks, travelerIds: form.pids, overlapReason: form.reason, checkedDocumentIds: form.checked,
       };
       const res = form.id == null
         ? await unwrap(api.POST('/api/travel/orders', { body }))
@@ -135,6 +136,7 @@ export function OrderForm() {
           <div className="wide"><label className="f" htmlFor="fRemarks">Remarks</label>
             <input id="fRemarks" value={form.remarks} maxLength={1000} onChange={(e) => setForm({ remarks: e.target.value })} /></div>
         </div>
+        <ChecklistBoxes checked={form.checked} onChange={(checked) => setForm({ checked })} />
 
         <div className="gap">
           {editing && <HistoryBox order={editing} />}

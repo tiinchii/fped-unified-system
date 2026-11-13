@@ -92,6 +92,9 @@ public class TravelOrder {
     @OrderBy("id")
     private List<TravelOrderChange> changes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "travelOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<TravelOrderDocument> documents = new LinkedHashSet<>();
+
     protected TravelOrder() {}
 
     public TravelOrder(String code, String encodedBy, Instant now) {
@@ -151,4 +154,5 @@ public class TravelOrder {
     public Instant getUpdatedAt() { return updatedAt; }
     public Set<Personnel> getTravelers() { return travelers; }
     public List<TravelOrderChange> getChanges() { return changes; }
+    public Set<TravelOrderDocument> getDocuments() { return documents; }
 }

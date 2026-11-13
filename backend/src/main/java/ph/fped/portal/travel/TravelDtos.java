@@ -47,7 +47,7 @@ public final class TravelDtos {
                             String purpose, LocalDate startDate, LocalDate endDate, String dtsNo, String toNo,
                             TravelStatus status, String remarks, String overlapReason, String encodedBy,
                             Instant encodedAt, String updatedBy, Instant updatedAt, List<Long> travelerIds,
-                            List<ChangeView> changes) {
+                            List<ChangeView> changes, List<CheckedDocument> checklist) {
 
         static OrderView of(TravelOrder t) {
             return new OrderView(t.getId(), t.getCode(), t.getDateFiled(), t.getOffice().getId(), t.getOffice().getName(),
@@ -55,7 +55,19 @@ public final class TravelDtos {
                     text(t.getToNo()), t.getStatus(), text(t.getRemarks()), text(t.getOverlapReason()),
                     t.getEncodedBy(), t.getEncodedAt(), t.getUpdatedBy(), t.getUpdatedAt(),
                     t.getTravelers().stream().map(Personnel::getId).toList(),
-                    t.getChanges().stream().map(ChangeView::of).toList());
+                    t.getChanges().stream().map(ChangeView::of).toList(),
+                    t.getDocuments().stream().map(d -> new CheckedDocument(d.getType().getId(), d.getCheckedBy(), d.getCheckedAt()))
+                            .sorted(java.util.Comparator.comparing(CheckedDocument::typeId)).toList());
+        }
+    }
+
+    /** A document of the checklist that is there, and who ticked it when. */
+    public record CheckedDocument(long typeId, String checkedBy, Instant checkedAt) {}
+
+    public record DocumentTypeView(long id, String name, int sortOrder, boolean active) {
+
+        static DocumentTypeView of(DocumentType d) {
+            return new DocumentTypeView(d.getId(), d.getName(), d.getSortOrder(), d.isActive());
         }
     }
 
@@ -69,8 +81,8 @@ public final class TravelDtos {
      * Everything the Travel Orders screens need for one year. Travel orders from December of the year before to
      * January of the year after are included, so overlaps across New Year are still seen.
      */
-    public record TravelData(List<OrderView> orders, List<PersonView> people, List<OfficeView> offices, LocalDate today,
-                             int year, Window window, List<Integer> years) {}
+    public record TravelData(List<OrderView> orders, List<PersonView> people, List<OfficeView> offices,
+                             List<DocumentTypeView> documentTypes, LocalDate today, int year, Window window, List<Integer> years) {}
 
     /**
      * order is empty when nothing was saved: a traveler has other travel on those dates (see conflicts) and no
@@ -79,7 +91,7 @@ public final class TravelDtos {
     public record SaveResult(@Schema(nullable = true) OrderView order, List<Conflict> conflicts) {}
 
     /** For the home page. */
-    public record Summary(LocalDate today, long onTravelToday, long startingIn7Days, long withoutToNo) {}
+    public record Summary(LocalDate today, long onTravelToday, long startingIn7Days, long withoutToNo, long checklistIncomplete) {}
 
     /* ---------- what the API accepts ---------- */
 
@@ -94,7 +106,16 @@ public final class TravelDtos {
             @Size(max = 100, message = "TO No. is too long.") String toNo,
             @Size(max = 1000, message = "Remarks are too long.") String remarks,
             @NotEmpty(message = "Add at least one traveler.") List<@NotNull Long> travelerIds,
-            @Size(max = 1000, message = "The reason is too long.") String overlapReason) {}
+            @Size(max = 1000, message = "The reason is too long.") String overlapReason,
+            List<@NotNull Long> checkedDocumentIds) {}
+
+    /** The documents of the checklist that are there; the others are taken as missing. */
+    public record SaveChecklist(@NotNull List<@NotNull Long> checkedDocumentIds) {}
+
+    public record SaveDocumentType(
+            @NotBlank(message = "Name is required.") @Size(max = 150, message = "Name is too long.") String name,
+            Integer sortOrder,
+            Boolean active) {}
 
     public record StatusChange(@Size(max = 500, message = "The reason is too long.") String reason) {}
 

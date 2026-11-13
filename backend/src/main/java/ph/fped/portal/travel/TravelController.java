@@ -14,6 +14,7 @@ import ph.fped.portal.auth.PortalPrincipal;
 import ph.fped.portal.travel.TravelDtos.OrderView;
 import ph.fped.portal.travel.TravelDtos.PersonView;
 import ph.fped.portal.travel.TravelDtos.Reschedule;
+import ph.fped.portal.travel.TravelDtos.SaveChecklist;
 import ph.fped.portal.travel.TravelDtos.SaveOrder;
 import ph.fped.portal.travel.TravelDtos.SavePerson;
 import ph.fped.portal.travel.TravelDtos.SaveResult;
@@ -51,6 +52,12 @@ public class TravelController {
     public SaveResult updateOrder(@AuthenticationPrincipal PortalPrincipal me, @PathVariable long id,
                                   @Valid @RequestBody SaveOrder req) {
         return service.saveOrder(me.username(), id, req);
+    }
+
+    @PutMapping("/orders/{id}/checklist")
+    public OrderView saveChecklist(@AuthenticationPrincipal PortalPrincipal me, @PathVariable long id,
+                                   @Valid @RequestBody SaveChecklist req) {
+        return service.saveChecklist(me.username(), id, req.checkedDocumentIds());
     }
 
     @PostMapping("/orders/{id}/cancel")

@@ -3,7 +3,7 @@ import { api, errorMessage, unwrap } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { NO_FILTER, TravelContext, type FormState, type ListFilter, type Notice, type PersonDialogOptions, type Tab, type TravelCtx } from './context';
 import { Dashboard } from './Dashboard';
-import { PersonDialog, RescheduleDialog, StatusDialog } from './dialogs';
+import { ChecklistDialog, PersonDialog, RescheduleDialog, StatusDialog } from './dialogs';
 import { buildModel, type Order, type Person, type TravelData } from './model';
 import { OrderForm } from './OrderForm';
 import { OrderList } from './OrderList';
@@ -14,7 +14,7 @@ import { TravelCalendar } from './TravelCalendar';
 const START_FILTER: ListFilter = { ...NO_FILTER, status: 'notcancelled' };
 
 function emptyForm(today: string): FormState {
-  return { id: null, pids: [], start: '', end: '', filed: today, officeId: null, dest: '', purpose: '', dts: '', toNo: '', remarks: '', reason: '' };
+  return { id: null, pids: [], start: '', end: '', filed: today, officeId: null, dest: '', purpose: '', dts: '', toNo: '', remarks: '', reason: '', checked: [] };
 }
 
 /**
@@ -36,6 +36,7 @@ export function TravelPage() {
   const [toastText, setToastText] = useState('');
   const [statusDialog, setStatusDialog] = useState<{ order: Order; mode: 'cancel' | 'restore' } | null>(null);
   const [rescheduling, setRescheduling] = useState<Order | null>(null);
+  const [checklistOrder, setChecklistOrder] = useState<Order | null>(null);
   const [personDialog, setPersonDialog] = useState<PersonDialogOptions | null>(null);
   const loadedYear = useRef<number | undefined>(undefined);
   const page = useRef<HTMLDivElement>(null);
@@ -115,7 +116,7 @@ export function TravelPage() {
         if (o.status !== 'ACTIVE' || !canEdit) { showList({ q: o.code }); return; } // the list is where Restore is
         setFormState({
           id, pids: [...o.travelerIds], start: o.startDate, end: o.endDate, filed: o.dateFiled, officeId: o.officeId, dest: o.destination,
-          purpose: o.purpose, dts: o.dtsNo, toNo: o.toNo, remarks: o.remarks, reason: o.overlapReason,
+          purpose: o.purpose, dts: o.dtsNo, toNo: o.toNo, remarks: o.remarks, reason: o.overlapReason, checked: o.checklist.map((c) => c.typeId),
         });
         setFormNotice(null);
         setTab('form');
@@ -126,6 +127,7 @@ export function TravelPage() {
       askCancel: (order) => setStatusDialog({ order, mode: 'cancel' }),
       askRestore: (order) => setStatusDialog({ order, mode: 'restore' }),
       askReschedule: setRescheduling,
+      askChecklist: setChecklistOrder,
       openPersonDialog: setPersonDialog,
     };
   }, [m, canEdit, tab, form, formNotice, filter, calMonth, personId, reload]);
@@ -176,6 +178,7 @@ export function TravelPage() {
 
         {statusDialog && <StatusDialog order={statusDialog.order} mode={statusDialog.mode} onClose={() => setStatusDialog(null)} />}
         {rescheduling && <RescheduleDialog order={rescheduling} onClose={() => setRescheduling(null)} />}
+        {checklistOrder && <ChecklistDialog order={checklistOrder} onClose={() => setChecklistOrder(null)} />}
         {personDialog && <PersonDialog options={personDialog} onClose={() => setPersonDialog(null)} />}
         {toastText && <div className="toast" role="status">{toastText}</div>}
       </div>

@@ -41,6 +41,7 @@ class TravelOrderFlowTest {
     @Autowired TravelOrderRepository orders;
     @Autowired PersonnelRepository personnel;
     @Autowired OfficeRepository offices;
+    @Autowired DocumentTypeRepository documentTypes;
     @Autowired PasswordEncoder encoder;
 
     MockHttpSession encoderLogin;
@@ -51,6 +52,7 @@ class TravelOrderFlowTest {
     @BeforeEach
     void setUp() throws Exception {
         orders.deleteAll();
+        documentTypes.deleteAll();
         personnel.deleteAll();
         audit.deleteAll();
         users.deleteAll();
@@ -278,5 +280,45 @@ class TravelOrderFlowTest {
         send(post("/api/admin/offices"), admin, Map.of("name", "frmd")).andExpect(status().isConflict());
         send(put("/api/admin/offices/" + id), admin, Map.of("name", "PLANNING", "active", false)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("PLANNING")).andExpect(jsonPath("$.active").value(false));
+    }
+
+    @Test
+    void theChecklistKeepsWhichDocumentsAreThere() throws Exception {
+        MockHttpSession admin = login(Role.ADMIN);
+        long itinerary = read(send(post("/api/admin/to-documents"), admin, Map.of("name", " Approved  itinerary ")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Approved itinerary")).andExpect(jsonPath("$.sortOrder").value(1))).get("id").asLong();
+        long invitation = read(send(post("/api/admin/to-documents"), admin, Map.of("name", "Invitation")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.sortOrder").value(2))).get("id").asLong();
+        send(post("/api/admin/to-documents"), admin, Map.of("name", "invitation")).andExpect(status().isConflict());
+        send(post("/api/admin/to-documents"), encoderLogin, Map.of("name", "X")).andExpect(status().isForbidden());
+
+        // ticked when the travel order is saved
+        Map<String, Object> body = order("2027-03-01", "2027-03-03", ana);
+        body.put("checkedDocumentIds", java.util.List.of(itinerary));
+        JsonNode o = saved(body);
+        assertThat(o.get("checklist")).hasSize(1);
+        assertThat(o.get("checklist").get(0).get("typeId").asLong()).isEqualTo(itinerary);
+        assertThat(o.get("checklist").get(0).get("checkedBy").asText()).isEqualTo("encoder");
+        long id = o.get("id").asLong();
+
+        // saving the form without a checklist leaves it as it is
+        assertThat(read(send(put("/api/travel/orders/" + id), encoderLogin, order("2027-03-01", "2027-03-03", ana))).get("order").get("checklist")).hasSize(1);
+
+        // ticked later, when the papers come back
+        send(put("/api/travel/orders/" + id + "/checklist"), encoderLogin, Map.of("checkedDocumentIds", java.util.List.of(invitation)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.checklist.length()").value(1))
+                .andExpect(jsonPath("$.checklist[0].typeId").value(invitation));
+        mvc.perform(get("/api/admin/audit").param("q", "checklist_to").session(admin))
+                .andExpect(jsonPath("$.items[0].details").value("ticked: Invitation; unticked: Approved itinerary"));
+
+        // a hidden document stays ticked but cannot be newly ticked
+        send(put("/api/admin/to-documents/" + itinerary), admin, Map.of("name", "Approved itinerary", "active", false)).andExpect(status().isOk());
+        send(put("/api/travel/orders/" + id + "/checklist"), encoderLogin, Map.of("checkedDocumentIds", java.util.List.of(invitation, itinerary)))
+                .andExpect(status().isBadRequest());
+        send(put("/api/travel/orders/" + id + "/checklist"), login(Role.VIEWER), Map.of("checkedDocumentIds", java.util.List.of()))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(get("/api/travel/data").param("year", "2027").session(encoderLogin))
+                .andExpect(jsonPath("$.documentTypes.length()").value(2)).andExpect(jsonPath("$.documentTypes[0].active").value(false));
     }
 }

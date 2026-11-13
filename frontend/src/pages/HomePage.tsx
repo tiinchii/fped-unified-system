@@ -12,8 +12,7 @@ const MODULES: Module[] = [
   { to: '/procurement', name: 'Procurement', text: 'Proposals, PRs, SPPMP, routing and budgets', color: '#7d3c98' },
 ];
 const GOOGLE: Module[] = [
-  { to: '/email', name: 'Email', text: 'Office inbox: read, label and print', color: '#c0392b', phase: 'Phase 4' },
-  { to: '/calendar', name: 'Calendar', text: 'Office calendar: add, edit and delete events', color: '#1e8449', phase: 'Phase 4' },
+  { to: '/calendar', name: 'Calendar', text: 'Shared calendar of the sections: add, edit and delete events', color: '#1e8449', phase: 'Phase 4' },
 ];
 
 export function HomePage() {
@@ -36,8 +35,8 @@ export function HomePage() {
       <p className="sub">{todayLong()}</p>
 
       <div className="alert">
-        The portal is being built in phases. Travel Orders and Procurement are ready to try; Email and Calendar open when
-        Phase 4 is finished. Until the data is moved (go-live), keep using the current Travel Order and Procurement apps for real records.
+        The portal is being built in phases. Travel Orders and Procurement are ready to try; the Calendar opens when Phase 4
+        is finished. Until the data is moved (go-live), keep using the current Travel Order and Procurement apps for real records.
       </div>
 
       {travel && <>
@@ -46,6 +45,7 @@ export function HomePage() {
           <Link to="/travel-orders" className="stat"><b>{travel.onTravelToday}</b><span>On travel today</span></Link>
           <Link to="/travel-orders" className="stat"><b>{travel.startingIn7Days}</b><span>Travel orders starting in the next 7 days</span></Link>
           <Link to="/travel-orders" className={'stat' + (travel.withoutToNo ? ' amber' : '')}><b>{travel.withoutToNo}</b><span>Travel orders without a TO No.</span></Link>
+          {travel.checklistIncomplete > 0 && <Link to="/travel-orders" className="stat amber"><b>{travel.checklistIncomplete}</b><span>Travel orders with an incomplete checklist</span></Link>}
         </div>
       </>}
 

@@ -1,13 +1,13 @@
 import { OrderLink, PersonLink } from './bits';
 import { useTravel } from './context';
-import { addDays, inWindow, range, type Order } from './model';
+import { addDays, askedDocs, inWindow, missingDocs, range, type Order } from './model';
 
 function ToNo({ order }: { order: Order }) {
   return order.toNo ? <span className="small muted"> · TO / Page # {order.toNo}</span> : null;
 }
 
 export function Dashboard() {
-  const { m } = useTravel();
+  const { m, showList } = useTravel();
   const today = m.today, week = addDays(today, 7);
   const current = inWindow(m, today, week); // false when an old year is selected
   const active = m.data.orders.filter((o) => o.status === 'ACTIVE' && o.startDate <= m.yearEnd && o.endDate >= m.yearStart);
@@ -16,6 +16,8 @@ export function Dashboard() {
   const name = (pid: number) => m.personById.get(pid)?.name ?? '';
   nowTrips.sort((a, b) => name(a.pid).localeCompare(name(b.pid)));
 
+  const incomplete = m.data.orders.filter((o) => o.status === 'ACTIVE' && o.endDate >= m.today && missingDocs(m, o).length > 0).length;
+
   return (
     <>
       <div className="stats">
@@ -23,6 +25,8 @@ export function Dashboard() {
         <div className="stat"><b>{current ? new Set(nowTrips.map((t) => t.pid)).size : '—'}</b><span>On travel today</span></div>
         <div className="stat"><b>{current ? weekPeople.size : '—'}</b><span>Travelling next 7 days</span></div>
         <div className="stat red"><b>{m.conflictPairs.length}</b><span>Overlapping travels</span></div>
+        {askedDocs(m).length > 0 && <button type="button" className={'stat' + (incomplete ? ' amber' : '')} onClick={() => showList({ onlyMissing: true, status: 'notcancelled' })}>
+          <b>{incomplete}</b><span>Kulang ang checklist (hindi pa tapos)</span></button>}
       </div>
       <div className="two">
         <div>

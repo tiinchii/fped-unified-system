@@ -54,4 +54,11 @@ public interface TravelOrderRepository extends JpaRepository<TravelOrder, Long> 
               and (t.toNo is null or t.toNo = '')
             """)
     long countWithoutToNo(@Param("from") LocalDate from);
+
+    /** Active travel orders not yet over, for the checklist count on the home page. */
+    @Query("""
+            select t from TravelOrder t
+            where t.status = ph.fped.portal.travel.TravelStatus.ACTIVE and t.endDate >= :from
+            """)
+    List<TravelOrder> findActiveEndingFrom(@Param("from") LocalDate from);
 }

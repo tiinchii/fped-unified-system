@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -18,6 +19,8 @@ import ph.fped.portal.common.ApiException;
 import ph.fped.portal.common.AppLock;
 import ph.fped.portal.common.Codes;
 import ph.fped.portal.travel.TravelDtos.Conflict;
+import ph.fped.portal.travel.TravelDtos.DocumentTypeView;
+import ph.fped.portal.travel.TravelDtos.SaveDocumentType;
 import ph.fped.portal.travel.TravelDtos.OfficeView;
 import ph.fped.portal.travel.TravelDtos.OrderView;
 import ph.fped.portal.travel.TravelDtos.PersonView;
@@ -45,14 +48,16 @@ public class TravelService {
     private final TravelOrderRepository orders;
     private final PersonnelRepository personnel;
     private final OfficeRepository offices;
+    private final DocumentTypeRepository documentTypes;
     private final AuditService audit;
     private final AppLock appLock;
 
     public TravelService(TravelOrderRepository orders, PersonnelRepository personnel, OfficeRepository offices,
-                         AuditService audit, AppLock appLock) {
+                         DocumentTypeRepository documentTypes, AuditService audit, AppLock appLock) {
         this.orders = orders;
         this.personnel = personnel;
         this.offices = offices;
+        this.documentTypes = documentTypes;
         this.audit = audit;
         this.appLock = appLock;
     }
@@ -80,14 +85,24 @@ public class TravelService {
                 orders.findInWindow(window.from(), window.to()).stream().map(OrderView::of).toList(),
                 personnel.findAllWithOffice().stream().map(PersonView::of).toList(),
                 offices.findAllByOrderByNameAsc().stream().map(OfficeView::of).toList(),
+                documentTypes.findAllByOrderBySortOrderAscNameAsc().stream().map(DocumentTypeView::of).toList(),
                 today, year, window, List.copyOf(years));
     }
 
     @Transactional(readOnly = true)
     public Summary summary() {
         LocalDate today = today();
+        Set<Long> asked = documentTypes.findAllByActiveTrue().stream().map(DocumentType::getId).collect(Collectors.toSet());
+        long incomplete = asked.isEmpty() ? 0 : orders.findActiveEndingFrom(today).stream().filter(t -> !missing(t, asked).isEmpty()).count();
         return new Summary(today, orders.countPeopleTravelling(today, today),
-                orders.countStartingBetween(today.plusDays(1), today.plusDays(7)), orders.countWithoutToNo(today));
+                orders.countStartingBetween(today.plusDays(1), today.plusDays(7)), orders.countWithoutToNo(today), incomplete);
+    }
+
+    /** The asked-for documents not ticked on this travel order. */
+    private static Set<Long> missing(TravelOrder t, Set<Long> asked) {
+        Set<Long> out = new java.util.HashSet<>(asked);
+        t.getDocuments().forEach(d -> out.remove(d.getType().getId()));
+        return out;
     }
 
     /* ======================== travel orders ======================== */
@@ -139,12 +154,57 @@ public class TravelService {
         order.getTravelers().retainAll(people);
         order.getTravelers().addAll(people);
         order.touch(actor, now);
+        String checklist = req.checkedDocumentIds() == null ? "" : applyChecklist(order, req.checkedDocumentIds(), actor, now);
         orders.saveAndFlush(order);
 
         String names = people.stream().map(Personnel::getName).sorted().collect(Collectors.joining(", "));
         audit.log(actor, isNew ? "CREATE_TO" : "UPDATE_TO", order.getCode(),
-                start + " to " + end + "; " + names + (conflicts.isEmpty() ? "" : "; OVERLAP ALLOWED: " + reason));
+                start + " to " + end + "; " + names + (conflicts.isEmpty() ? "" : "; OVERLAP ALLOWED: " + reason)
+                        + (checklist.isEmpty() ? "" : "; checklist: " + checklist));
         return new SaveResult(OrderView.of(order), List.of());
+    }
+
+    /** Ticks the documents of the checklist that are there; every other document is taken as missing. */
+    @Transactional
+    public OrderView saveChecklist(String actor, long id, List<Long> checkedIds) {
+        lock();
+        TravelOrder order = find(id);
+        if (order.getStatus() == TravelStatus.CANCELLED) throw ApiException.badRequest(order.getCode() + " is cancelled. Restore it first.");
+        Instant now = Instant.now();
+        String change = applyChecklist(order, checkedIds, actor, now);
+        if (!change.isEmpty()) {
+            order.touch(actor, now);
+            orders.saveAndFlush(order);
+            audit.log(actor, "CHECKLIST_TO", order.getCode(), change);
+        }
+        return OrderView.of(order);
+    }
+
+    /**
+     * Makes the ticked documents of a travel order the given ones. A hidden document can stay ticked but cannot
+     * be newly ticked. Gives what changed, for the audit log ("" when nothing changed).
+     */
+    private String applyChecklist(TravelOrder order, List<Long> checkedIds, String actor, Instant now) {
+        Set<Long> wanted = new LinkedHashSet<>(checkedIds);
+        Map<Long, TravelOrderDocument> have = new java.util.HashMap<>();
+        order.getDocuments().forEach(d -> have.put(d.getType().getId(), d));
+        List<String> added = new java.util.ArrayList<>(), removed = new java.util.ArrayList<>();
+        for (Long typeId : wanted) {
+            if (have.containsKey(typeId)) continue;
+            DocumentType type = documentTypes.findById(typeId).orElseThrow(() -> ApiException.badRequest("Unknown document in the checklist."));
+            if (!type.isActive()) throw ApiException.badRequest(type.getName() + " is no longer on the checklist.");
+            order.getDocuments().add(new TravelOrderDocument(order, type, actor, now));
+            added.add(type.getName());
+        }
+        order.getDocuments().removeIf(d -> {
+            if (wanted.contains(d.getType().getId())) return false;
+            removed.add(d.getType().getName());
+            return true;
+        });
+        List<String> parts = new java.util.ArrayList<>();
+        if (!added.isEmpty()) parts.add("ticked: " + String.join(", ", added));
+        if (!removed.isEmpty()) parts.add("unticked: " + String.join(", ", removed));
+        return String.join("; ", parts);
     }
 
     /** A cancelled travel order is kept but no longer counts in the overlap check. */
@@ -309,6 +369,31 @@ public class TravelService {
         offices.save(office);
         audit.log(actor, id == null ? "ADD_OFFICE" : "UPDATE_OFFICE", name, office.isActive() ? "active" : "hidden");
         return OfficeView.of(office);
+    }
+
+    /* ======================== checklist documents (Admin) ======================== */
+
+    @Transactional
+    public DocumentTypeView saveDocumentType(String actor, Long id, SaveDocumentType req) {
+        String name = req.name().replaceAll("\\s+", " ").trim();
+        lock();
+        documentTypes.findByNameIgnoreCase(name).filter(d -> !d.getId().equals(id)).ifPresent(d -> {
+            throw ApiException.conflict(d.getName() + " is already on the checklist.");
+        });
+        DocumentType type;
+        if (id == null) {
+            type = new DocumentType(name);
+            type.setSortOrder(req.sortOrder() != null ? req.sortOrder()
+                    : documentTypes.findAll().stream().mapToInt(DocumentType::getSortOrder).max().orElse(0) + 1);
+        } else {
+            type = documentTypes.findById(id).orElseThrow(() -> ApiException.notFound("Document not found."));
+            type.setName(name);
+            if (req.sortOrder() != null) type.setSortOrder(req.sortOrder());
+            type.setActive(!Boolean.FALSE.equals(req.active()));
+        }
+        documentTypes.save(type);
+        audit.log(actor, id == null ? "ADD_TO_DOCUMENT" : "UPDATE_TO_DOCUMENT", name, type.isActive() ? "asked for" : "hidden");
+        return DocumentTypeView.of(type);
     }
 
     /* ======================== helpers ======================== */

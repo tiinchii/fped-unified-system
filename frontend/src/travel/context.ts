@@ -10,6 +10,8 @@ export interface FormState {
   start: string; end: string; filed: string;
   officeId: number | null;
   dest: string; purpose: string; dts: string; toNo: string; remarks: string; reason: string;
+  /** Documents of the checklist that are there. */
+  checked: number[];
 }
 
 export interface ListFilter {
@@ -18,8 +20,10 @@ export interface ListFilter {
   month: string;
   status: 'notcancelled' | ShownStatus | '';
   onlyConf: boolean;
+  /** Only travel orders whose checklist is not complete. */
+  onlyMissing: boolean;
 }
-export const NO_FILTER: ListFilter = { q: '', office: '', month: '', status: '', onlyConf: false };
+export const NO_FILTER: ListFilter = { q: '', office: '', month: '', status: '', onlyConf: false, onlyMissing: false };
 
 export interface Notice { kind: 'ok' | 'bad' | 'warn'; text: string }
 
@@ -60,6 +64,7 @@ export interface TravelCtx {
   askCancel(order: Order): void;
   askRestore(order: Order): void;
   askReschedule(order: Order): void;
+  askChecklist(order: Order): void;
   openPersonDialog(options: PersonDialogOptions): void;
 }
 

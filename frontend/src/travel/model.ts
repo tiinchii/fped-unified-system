@@ -7,6 +7,7 @@ export type Office = Schemas['OfficeView'];
 export type Conflict = Schemas['Conflict'];
 export type Change = Schemas['ChangeView'];
 export type Employment = NonNullable<Person['employment']>;
+export type DocType = Schemas['DocumentTypeView'];
 
 /** One person on one active travel order. */
 export interface Trip { pid: number; to: number; start: string; end: string }
@@ -100,6 +101,17 @@ export function conflictsFor(m: Model, pids: number[], start: string, end: strin
     }
   }
   return out;
+}
+
+/** The documents the checklist asks for (Admin keeps the list in Settings), in their order. */
+export function askedDocs(m: Model): DocType[] {
+  return m.data.documentTypes.filter((d) => d.active);
+}
+
+/** The asked-for documents not ticked on this travel order. */
+export function missingDocs(m: Model, o: Order): DocType[] {
+  const ticked = new Set(o.checklist.map((c) => c.typeId));
+  return askedDocs(m).filter((d) => !ticked.has(d.id));
 }
 
 /** Is this date range inside the data that is loaded in the browser? Outside it, only the server can check. */
